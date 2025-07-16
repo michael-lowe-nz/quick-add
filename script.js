@@ -2,6 +2,7 @@ const display = document.getElementById('display');
 const numbers = document.getElementById('numbers');
 const totalEl = document.getElementById('total');
 const modeToggle = document.getElementById('modeToggle');
+const hiddenInput = document.getElementById('hiddenInput');
 
 let total = 0;
 let currentNumber = 0;
@@ -62,6 +63,30 @@ modeToggle.addEventListener('click', () => {
     currencyMode = !currencyMode;
     modeToggle.classList.toggle('active', currencyMode);
     updateDisplay();
+});
+
+display.addEventListener('click', () => {
+    hiddenInput.focus();
+});
+
+hiddenInput.addEventListener('input', (e) => {
+    const value = e.target.value;
+    if (value && /^-?\d+$/.test(value)) {
+        inputString = value;
+        currentNumber = parseInt(inputString) || 0;
+        updateDisplay();
+    }
+});
+
+hiddenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === '+') {
+        e.preventDefault();
+        addNumber();
+        hiddenInput.value = '';
+    } else if (e.key === 'Backspace' && hiddenInput.value === '') {
+        e.preventDefault();
+        editLastNumber();
+    }
 });
 
 document.addEventListener('keydown', (e) => {
