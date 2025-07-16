@@ -152,7 +152,9 @@ body {
     .left {
         border-right: none;
         border-bottom: 2px solid #ddd;
-        flex: 0 0 auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column-reverse;
     }
     
     .right {
@@ -160,14 +162,21 @@ body {
         min-height: 0;
     }
     
+    .keypad {
+        flex: 0 0 auto;
+        margin-bottom: 20px;
+    }
+    
     .display {
         font-size: 28px;
         padding: 15px;
         min-height: 50px;
+        flex: 1;
     }
     
     .toggle {
         margin-bottom: 15px;
+        order: -1;
     }
     
     #modeToggle {
