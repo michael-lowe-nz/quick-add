@@ -32,13 +32,6 @@ body {
     margin-bottom: 20px;
 }
 
-.hidden-input {
-    position: absolute;
-    left: -9999px;
-    opacity: 0;
-    pointer-events: none;
-}
-
 #modeToggle {
     padding: 15px 30px;
     font-size: 24px;
@@ -57,17 +50,55 @@ body {
 }
 
 .display {
-    font-size: 48px;
+    font-size: 36px;
     font-weight: bold;
-    padding: 30px 20px;
+    padding: 20px;
     background: #f8f8f8;
     border-radius: 8px;
     text-align: center;
-    flex: 1;
+    margin-bottom: 20px;
+    word-break: break-all;
+    min-height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    word-break: break-all;
+}
+
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    flex: 1;
+}
+
+.key {
+    background: #fff;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    min-height: 60px;
+}
+
+.key:hover,
+.key:active {
+    background: #f0f0f0;
+    transform: scale(0.95);
+}
+
+.key.add {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.key.add:hover,
+.key.add:active {
+    background: #0056b3;
 }
 
 .numbers {
@@ -130,9 +161,9 @@ body {
     }
     
     .display {
-        font-size: 36px;
-        padding: 20px 15px;
-        min-height: 80px;
+        font-size: 28px;
+        padding: 15px;
+        min-height: 50px;
     }
     
     .toggle {
@@ -142,6 +173,12 @@ body {
     #modeToggle {
         padding: 12px 24px;
         font-size: 20px;
+    }
+    
+    .key {
+        font-size: 20px;
+        padding: 15px;
+        min-height: 50px;
     }
     
     .number-item {

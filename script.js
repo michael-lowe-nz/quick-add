@@ -2,7 +2,7 @@ const display = document.getElementById('display');
 const numbers = document.getElementById('numbers');
 const totalEl = document.getElementById('total');
 const modeToggle = document.getElementById('modeToggle');
-const hiddenInput = document.getElementById('hiddenInput');
+const keys = document.querySelectorAll('.key');
 
 let total = 0;
 let currentNumber = 0;
@@ -65,28 +65,28 @@ modeToggle.addEventListener('click', () => {
     updateDisplay();
 });
 
-display.addEventListener('click', () => {
-    hiddenInput.focus();
-});
-
-hiddenInput.addEventListener('input', (e) => {
-    const value = e.target.value;
-    if (value && /^-?\d+$/.test(value)) {
-        inputString = value;
-        currentNumber = parseInt(inputString) || 0;
-        updateDisplay();
-    }
-});
-
-hiddenInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ' || e.key === '+') {
-        e.preventDefault();
-        addNumber();
-        hiddenInput.value = '';
-    } else if (e.key === 'Backspace' && hiddenInput.value === '') {
-        e.preventDefault();
-        editLastNumber();
-    }
+keys.forEach(key => {
+    key.addEventListener('click', () => {
+        const keyValue = key.dataset.key;
+        
+        if (keyValue >= '0' && keyValue <= '9') {
+            inputString += keyValue;
+            currentNumber = parseInt(inputString) || 0;
+            updateDisplay();
+        } else if (keyValue === '-') {
+            if (inputString === '') {
+                inputString = '-';
+                currentNumber = 0;
+                updateDisplay();
+            } else {
+                inputString = inputString.startsWith('-') ? inputString.slice(1) : '-' + inputString;
+                currentNumber = parseInt(inputString) || 0;
+                updateDisplay();
+            }
+        } else if (keyValue === '+') {
+            addNumber();
+        }
+    });
 });
 
 document.addEventListener('keydown', (e) => {
@@ -104,15 +104,25 @@ document.addEventListener('keydown', (e) => {
         }
     } else if (e.key === 'Enter' || e.key === ' ' || e.key === '+') {
         addNumber();
-    } else if (e.key === '-' && inputString === '') {
-        inputString = '-';
-        currentNumber = 0;
-        updateDisplay();
+    } else if (e.key === '-') {
+        if (inputString === '') {
+            inputString = '-';
+            currentNumber = 0;
+            updateDisplay();
+        } else {
+            inputString = inputString.startsWith('-') ? inputString.slice(1) : '-' + inputString;
+            currentNumber = parseInt(inputString) || 0;
+            updateDisplay();
+        }
     }
 });
 
 updateDisplay();
 
+// Ensure page can receive keyboard events
+document.body.setAttribute('tabindex', '0');
+document.body.focus();
+
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
+    navigator.serviceWorker.register('/quick-add/sw.js');
 }
