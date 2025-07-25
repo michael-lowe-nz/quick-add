@@ -17,30 +17,38 @@
 </head>
 <body>
     <div class="container">
-        <div class="left">
-            <div class="toggle">
-                <button id="modeToggle">$</button>
+        <div class="content-area">
+            <div class="left">
+                <div class="toggle">
+                    <div class="toggle-switch" id="modeToggle">
+                        <div class="toggle-track">
+                            <span class="toggle-label left">Numbers</span>
+                            <span class="toggle-label right">Dollars</span>
+                        </div>
+                        <div class="toggle-thumb"></div>
+                    </div>
+                </div>
+                <div class="display" id="display">0</div>
             </div>
-            <div class="display" id="display">0</div>
-            <div class="keypad">
-                <button class="key" data-key="7">7</button>
-                <button class="key" data-key="8">8</button>
-                <button class="key" data-key="9">9</button>
-                <button class="key" data-key="4">4</button>
-                <button class="key" data-key="5">5</button>
-                <button class="key" data-key="6">6</button>
-                <button class="key" data-key="1">1</button>
-                <button class="key" data-key="2">2</button>
-                <button class="key" data-key="3">3</button>
-                <button class="key" data-key="-">+/-</button>
-                <button class="key" data-key="0">0</button>
-                <button class="key add" data-key="+">+</button>
+            <div class="right">
+                <div class="numbers" id="numbers"></div>
+                <div class="plus-icon">+</div>
+                <div class="total">Total: <span id="total">0</span></div>
             </div>
         </div>
-        <div class="right">
-            <div class="numbers" id="numbers"></div>
-            <div class="plus-icon">+</div>
-            <div class="total">Total: <span id="total">0</span></div>
+        <div class="keypad">
+            <button class="key" data-key="7">7</button>
+            <button class="key" data-key="8">8</button>
+            <button class="key" data-key="9">9</button>
+            <button class="key" data-key="4">4</button>
+            <button class="key" data-key="5">5</button>
+            <button class="key" data-key="6">6</button>
+            <button class="key" data-key="1">1</button>
+            <button class="key" data-key="2">2</button>
+            <button class="key" data-key="3">3</button>
+            <button class="key" data-key="-">+/-</button>
+            <button class="key" data-key="0">0</button>
+            <button class="key add" data-key="+">+</button>
         </div>
     </div>
     <script src="script.js"></script>

@@ -1,17 +1,30 @@
+:root {
+    --vh: 1vh;
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-right: env(safe-area-inset-right);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+    --safe-area-inset-left: env(safe-area-inset-left);
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
     background: #f5f5f5;
     height: 100vh;
+    height: calc(var(--vh, 1vh) * 100); /* Use custom property for better mobile support */
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
+    transition: background-color 0.2s ease-out;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
     display: flex;
     height: 100vh;
+    height: calc(var(--vh, 1vh) * 100); /* Use custom property for better mobile support */
     gap: 0;
 }
 
@@ -32,25 +45,81 @@ body {
     margin-bottom: 20px;
 }
 
-#modeToggle {
-    padding: 15px 30px;
-    font-size: 24px;
-    border: 3px solid #007bff;
-    background: white;
-    color: #007bff;
-    border-radius: 8px;
+.toggle-switch {
+    position: relative;
+    width: 200px;
+    height: 50px;
+    background: #6c757d;
+    border-radius: 25px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
     touch-action: manipulation;
+    margin: 0 auto;
+    overflow: hidden;
+    will-change: background-color;
 }
 
-#modeToggle.active {
+.toggle-switch.active {
     background: #007bff;
+}
+
+.toggle-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.toggle-label {
+    font-size: 14px;
+    font-weight: 600;
     color: white;
+    z-index: 1;
+    transition: opacity 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    pointer-events: none;
+    will-change: opacity;
+}
+
+.toggle-label.left {
+    opacity: 1;
+}
+
+.toggle-label.right {
+    opacity: 0.6;
+}
+
+.toggle-switch.active .toggle-label.left {
+    opacity: 0.6;
+}
+
+.toggle-switch.active .toggle-label.right {
+    opacity: 1;
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 44px;
+    height: 44px;
+    background: white;
+    border-radius: 22px;
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+    will-change: transform;
+}
+
+.toggle-switch.active .toggle-thumb {
+    transform: translateX(150px);
 }
 
 .display {
-    font-size: 36px;
+    font-size: clamp(24px, 5vw, 36px); /* Responsive font sizing */
     font-weight: bold;
     padding: 20px;
     background: #f8f8f8;
@@ -62,12 +131,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+    will-change: transform;
 }
 
 .keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+    gap: 16px; /* Increased from 15px for better spacing */
     flex: 1;
 }
 
@@ -75,30 +146,56 @@ body {
     background: #fff;
     border: 2px solid #ddd;
     border-radius: 8px;
-    font-size: 24px;
+    font-size: clamp(18px, 3.5vw, 24px); /* Responsive font sizing */
     font-weight: bold;
     padding: 20px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
     touch-action: manipulation;
-    min-height: 60px;
+    min-height: 64px; /* Increased from 60px for better touch targets */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    will-change: transform, background-color, box-shadow;
+    position: relative;
+    overflow: hidden;
 }
 
-.key:hover,
+.key:hover {
+    background: #f8f9fa;
+    border-color: #adb5bd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
 .key:active {
-    background: #f0f0f0;
-    transform: scale(0.95);
+    background: #e9ecef;
+    transform: scale(0.95) translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 .key.add {
     background: #007bff;
     color: white;
     border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
 }
 
-.key.add:hover,
-.key.add:active {
+.key.add:hover {
     background: #0056b3;
+    border-color: #0056b3;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.key.add:active {
+    background: #004085;
+    border-color: #004085;
+    transform: scale(0.95) translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 123, 255, 0.2);
+    transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 .numbers {
@@ -109,25 +206,37 @@ body {
 }
 
 .number-item {
-    padding: 15px 20px;
+    padding: 16px 20px; /* Increased from 15px for better touch targets */
     margin: 8px 0;
     background: #e8f4fd;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s;
-    font-size: 24px;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+    font-size: clamp(16px, 3vw, 24px); /* Responsive font sizing */
     touch-action: manipulation;
     word-break: break-all;
+    min-height: 44px; /* Ensure minimum touch target size */
+    display: flex;
+    align-items: center;
+    border: 1px solid transparent;
+    will-change: transform, background-color;
 }
 
-.number-item:hover,
+.number-item:hover {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    transform: translateX(2px);
+}
+
 .number-item:active {
     background: #ffebee;
     color: #d32f2f;
+    transform: scale(0.98);
+    transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 .plus-icon {
-    font-size: 36px;
+    font-size: clamp(24px, 4vw, 36px); /* Responsive font sizing */
     font-weight: bold;
     text-align: center;
     color: #666;
@@ -135,74 +244,917 @@ body {
 }
 
 .total {
-    font-size: 36px;
+    font-size: clamp(24px, 5vw, 36px); /* Responsive font sizing */
     font-weight: bold;
     padding: 20px;
     background: #e8f5e8;
     border-radius: 8px;
     text-align: center;
     word-break: break-all;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+    will-change: transform;
 }
 
-@media (max-width: 768px) {
-    .container {
-        flex-direction: column;
+/* Enhanced mobile responsiveness with multiple breakpoints */
+
+/* Small mobile devices (320px - 480px) */
+@media (max-width: 480px) {
+    .toggle-switch {
+        width: 140px;
+        height: 40px;
+        border-radius: 20px;
     }
     
-    .left {
-        border-right: none;
-        border-bottom: 2px solid #ddd;
-        flex: 1;
-        display: flex;
-        flex-direction: column-reverse;
+    .toggle-track {
+        padding: 0 12px;
     }
     
-    .right {
-        flex: 1;
-        min-height: 0;
+    .toggle-label {
+        font-size: 11px;
     }
     
-    .keypad {
-        flex: 0 0 auto;
-        margin-bottom: 20px;
+    .toggle-thumb {
+        width: 34px;
+        height: 34px;
+        border-radius: 17px;
+        top: 3px;
+        left: 3px;
+    }
+    
+    .toggle-switch.active .toggle-thumb {
+        transform: translateX(100px);
     }
     
     .display {
         font-size: 28px;
-        padding: 15px;
-        min-height: 50px;
-        flex: 1;
-    }
-    
-    .toggle {
-        margin-bottom: 15px;
-        order: -1;
-    }
-    
-    #modeToggle {
-        padding: 12px 24px;
-        font-size: 20px;
+        padding: 20px;
+        min-height: 56px;
     }
     
     .key {
         font-size: 20px;
-        padding: 15px;
-        min-height: 50px;
+        padding: 14px;
+        min-height: 56px;
+    }
+    
+    .total {
+        font-size: 20px;
+        padding: 16px;
     }
     
     .number-item {
+        font-size: 16px;
+        padding: 14px 16px;
+    }
+    
+    .plus-icon {
         font-size: 20px;
-        padding: 12px 15px;
+    }
+}
+
+/* Medium mobile devices (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .display {
+        font-size: 32px;
+        padding: 24px;
+        min-height: 64px;
+    }
+    
+    .key {
+        font-size: 24px;
+        padding: 18px;
+        min-height: 64px;
+    }
+    
+    .total {
+        font-size: 24px;
+        padding: 20px;
+    }
+    
+    .number-item {
+        font-size: 18px;
+        padding: 16px 20px;
+    }
+}
+
+/* Landscape orientation handling for mobile devices */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container {
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for better browser support */
+    }
+    
+    .content-area {
+        padding-bottom: 200px; /* Reduced keypad height for landscape */
+        flex-direction: row;
+        gap: 16px;
+    }
+    
+    .left {
+        flex: 0 0 40%;
+        padding: 12px 16px;
+        order: 1;
+    }
+    
+    .right {
+        flex: 1;
+        padding: 12px 16px;
+        margin: 0;
+        border-radius: 8px;
+        order: 2;
+    }
+    
+    .keypad {
+        min-height: 200px;
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        gap: 12px;
+    }
+    
+    .key {
+        font-size: 20px;
+        padding: 12px;
+        min-height: 48px;
+        border-radius: 8px;
+    }
+    
+    .display {
+        font-size: 24px;
+        padding: 16px;
+        min-height: 48px;
+        margin-bottom: 12px;
+    }
+    
+    .toggle-switch {
+        width: 120px;
+        height: 36px;
+        border-radius: 18px;
+    }
+    
+    .toggle-track {
+        padding: 0 10px;
+    }
+    
+    .toggle-label {
+        font-size: 10px;
+    }
+    
+    .toggle-thumb {
+        width: 30px;
+        height: 30px;
+        border-radius: 15px;
+        top: 3px;
+        left: 3px;
+    }
+    
+    .toggle-switch.active .toggle-thumb {
+        transform: translateX(84px);
+    }
+    
+    .total {
+        font-size: 20px;
+        padding: 16px;
+    }
+    
+    .number-item {
+        font-size: 16px;
+        padding: 12px 16px;
         margin: 6px 0;
     }
     
     .plus-icon {
+        font-size: 20px;
+        margin: 8px 0;
+    }
+    
+    .toggle {
+        margin-bottom: 12px;
+    }
+}
+
+/* Very small landscape devices (height < 500px) */
+@media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
+    .content-area {
+        padding-bottom: 160px;
+    }
+    
+    .keypad {
+        min-height: 160px;
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .key {
+        font-size: 18px;
+        padding: 8px;
+        min-height: 40px;
+    }
+    
+    .display {
+        font-size: 20px;
+        padding: 12px;
+        min-height: 40px;
+    }
+    
+    .left, .right {
+        padding: 8px 12px;
+    }
+    
+    .total {
+        font-size: 18px;
+        padding: 12px;
+    }
+    
+    .number-item {
+        font-size: 14px;
+        padding: 10px 12px;
+        margin: 4px 0;
+    }
+}
+
+/* Portrait orientation - standard mobile layout */
+@media (max-width: 768px) and (orientation: portrait) {
+    body {
+        overflow: hidden;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height */
+    }
+    
+    .container {
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for better browser support */
+        position: relative;
+        display: flex;
+    }
+    
+    /* Content area that contains all content above the keypad */
+    .content-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding-bottom: 280px; /* Account for keypad height */
+        min-height: 0; /* Allow flex shrinking */
+        box-sizing: border-box;
+    }
+    
+    /* Left section for toggle and display */
+    .left {
+        border-right: none;
+        border-bottom: none;
+        flex: none;
+        padding: 16px 20px 0 20px;
+        background: transparent;
+        order: 1;
+    }
+    
+    /* Right section for number history and total - optimized for bottom keypad */
+    .right {
+        flex: 1;
+        padding: 16px 20px 20px 20px;
+        background: white;
+        border-radius: 12px 12px 0 0;
+        margin: 0 20px 0 20px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* Allow flex shrinking */
+        order: 2;
+        overflow: hidden;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Fixed keypad at bottom with optimized spacing */
+    .keypad {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 20px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        border-top: 1px solid #ddd;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        height: auto;
+        min-height: 280px; /* Ensure consistent keypad height */
+    }
+    
+    /* Display area styling - positioned for optimal visibility */
+    .display {
+        font-size: 32px;
+        padding: 24px;
+        min-height: 64px;
+        margin-bottom: 16px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    /* Toggle positioning */
+    .toggle {
+        margin-bottom: 16px;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    .toggle-switch {
+        width: 160px;
+        height: 44px;
+        border-radius: 22px;
+        transition: background-color 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    .toggle-track {
+        padding: 0 16px;
+    }
+    
+    .toggle-label {
+        font-size: 12px;
+    }
+    
+    .toggle-thumb {
+        width: 38px;
+        height: 38px;
+        border-radius: 19px;
+        top: 3px;
+        left: 3px;
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        will-change: transform;
+    }
+    
+    .toggle-switch.active .toggle-thumb {
+        transform: translateX(116px);
+    }
+    
+    /* Enhanced keypad buttons with optimized touch targets */
+    .key {
+        font-size: 24px;
+        padding: 18px;
+        min-height: 64px; /* Increased from 56px to exceed 44px minimum */
+        border-radius: 12px;
+        font-weight: 600;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        transition: all 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e9ecef;
+        background: #ffffff;
+        color: #333;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        will-change: transform, background-color, box-shadow;
+    }
+    
+    /* Enhanced visual feedback for button presses */
+    .key:hover {
+        background: #f8f9fa;
+        border-color: #dee2e6;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
+    
+    .key:active {
+        transform: scale(0.95) translateY(0);
+        background: #e9ecef;
+        border-color: #adb5bd;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    /* Add button specific styling */
+    .key.add {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+    }
+    
+    .key.add:hover {
+        background: #0056b3;
+        border-color: #0056b3;
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+        transform: translateY(-1px);
+    }
+    
+    .key.add:active {
+        background: #004085;
+        border-color: #004085;
+        transform: scale(0.95) translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 123, 255, 0.2);
+        transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    /* Number history styling - optimized scrollable area above keypad */
+    .numbers {
+        flex: 1;
+        overflow-y: auto;
+        margin-bottom: 16px;
+        -webkit-overflow-scrolling: touch;
+        min-height: 0; /* Allow flex shrinking */
+        scrollbar-width: thin;
+        scrollbar-color: #ccc transparent;
+    }
+    
+    /* Webkit scrollbar styling for better mobile experience */
+    .numbers::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .numbers::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .numbers::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 2px;
+    }
+    
+    /* Ensure content doesn't get hidden behind keypad */
+    .content-area::after {
+        content: '';
+        height: 20px;
+        flex-shrink: 0;
+    }
+    
+    /* Optimize viewport height calculation for mobile browsers */
+    @supports (-webkit-touch-callout: none) {
+        .container {
+            height: -webkit-fill-available;
+        }
+    }
+    
+    .number-item {
+        font-size: 18px;
+        padding: 16px 20px; /* Increased padding for better touch targets */
+        margin: 8px 0; /* Increased from 6px for better spacing */
+        border-radius: 8px;
+        min-height: 44px; /* Ensure minimum touch target size */
+        display: flex;
+        align-items: center;
+        transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        border: 1px solid transparent;
+        will-change: transform, background-color;
+    }
+    
+    .number-item:hover {
+        background: #fff3cd;
+        border-color: #ffeaa7;
+        transform: translateX(2px);
+    }
+    
+    .number-item:active {
+        background: #ffebee;
+        color: #d32f2f;
+        transform: scale(0.98);
+        transition: all 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    .plus-icon {
+        font-size: 24px;
+        margin: 12px 0;
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+    
+    /* Total display positioned for optimal visibility during keypad use */
+    .total {
+        font-size: 24px;
+        padding: 20px;
+        border-radius: 8px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+        border: 1px solid #c3e6cb;
+        flex-shrink: 0; /* Prevent shrinking */
+        margin-bottom: 0; /* Remove bottom margin to maximize space */
+        transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        will-change: transform;
+    }
+}
+
+/* Enhanced animations and performance optimizations */
+
+/* Ripple effect for button presses */
+.key::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.key:active::before {
+    width: 100px;
+    height: 100px;
+    opacity: 1;
+    transition: width 0.1s ease-out, height 0.1s ease-out, opacity 0.1s ease-out;
+}
+
+.key.add::before {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth layout transitions for mode switching */
+.container {
+    transition: all 0.2s ease-out;
+}
+
+.content-area {
+    transition: all 0.2s ease-out;
+}
+
+/* Enhanced number item animations with stagger effect */
+.number-item {
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideInFromLeft 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+@keyframes slideInFromLeft {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Smooth scrolling for number history */
+.numbers {
+    scroll-behavior: smooth;
+}
+
+/* Performance optimizations for mobile */
+@media (max-width: 768px) {
+    /* GPU acceleration for better performance */
+    .toggle-thumb,
+    .key,
+    .number-item,
+    .display,
+    .total {
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+    }
+    
+    /* Optimize animations for mobile devices */
+    .key {
+        transition: all 0.12s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    .key:active {
+        transition: all 0.08s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    /* Enhanced ripple effect for mobile */
+    .key::before {
+        transition: width 0.2s ease-out, height 0.2s ease-out, opacity 0.2s ease-out;
+    }
+    
+    .key:active::before {
+        width: 80px;
+        height: 80px;
+        transition: width 0.08s ease-out, height 0.08s ease-out, opacity 0.08s ease-out;
+    }
+}
+
+/* Large mobile devices and small tablets (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .display {
+        font-size: 40px;
+        padding: 28px;
+    }
+    
+    .key {
         font-size: 28px;
-        margin: 10px 0;
+        padding: 24px;
+        min-height: 72px;
+    }
+    
+    .total {
+        font-size: 32px;
+        padding: 24px;
+    }
+    
+    .number-item {
+        font-size: 22px;
+        padding: 18px 24px;
+    }
+}
+
+/* Ultra-wide aspect ratio devices (aspect-ratio > 2:1) */
+@media (max-width: 768px) and (min-aspect-ratio: 2/1) {
+    .content-area {
+        flex-direction: row;
+        gap: 20px;
+        padding-bottom: 180px;
+    }
+    
+    .left {
+        flex: 0 0 35%;
+        order: 1;
+    }
+    
+    .right {
+        flex: 1;
+        order: 2;
+        margin: 0;
+    }
+    
+    .keypad {
+        min-height: 180px;
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .key {
+        font-size: 18px;
+        padding: 10px;
+        min-height: 44px;
+    }
+}
+
+/* Tall aspect ratio devices (aspect-ratio < 1:2) */
+@media (max-width: 768px) and (max-aspect-ratio: 1/2) {
+    .content-area {
+        padding-bottom: 320px;
+    }
+    
+    .keypad {
+        min-height: 320px;
+        padding: 24px;
+        gap: 20px;
+    }
+    
+    .key {
+        font-size: 28px;
+        padding: 24px;
+        min-height: 72px;
+        border-radius: 16px;
+    }
+    
+    .display {
+        font-size: 36px;
+        padding: 28px;
+        min-height: 72px;
     }
     
     .total {
         font-size: 28px;
-        padding: 15px;
+        padding: 24px;
+    }
+    
+    .number-item {
+        font-size: 20px;
+        padding: 18px 24px;
+        margin: 10px 0;
+    }
+}
+
+/* iPhone SE and similar small devices (width: 320px) */
+@media (max-width: 320px) {
+    .toggle-switch {
+        width: 120px;
+        height: 36px;
+        border-radius: 18px;
+    }
+    
+    .toggle-track {
+        padding: 0 10px;
+    }
+    
+    .toggle-label {
+        font-size: 10px;
+    }
+    
+    .toggle-thumb {
+        width: 30px;
+        height: 30px;
+        border-radius: 15px;
+    }
+    
+    .toggle-switch.active .toggle-thumb {
+        transform: translateX(84px);
+    }
+    
+    .display {
+        font-size: 24px;
+        padding: 16px;
+        min-height: 48px;
+    }
+    
+    .key {
+        font-size: 18px;
+        padding: 12px;
+        min-height: 48px;
+        border-radius: 8px;
+    }
+    
+    .keypad {
+        gap: 12px;
+        padding: 16px;
+        min-height: 260px;
+    }
+    
+    .content-area {
+        padding-bottom: 260px;
+    }
+    
+    .total {
+        font-size: 18px;
+        padding: 14px;
+    }
+    
+    .number-item {
+        font-size: 14px;
+        padding: 12px 14px;
+    }
+    
+    .left, .right {
+        padding: 12px 16px;
+    }
+}
+
+/* iPhone 12/13/14 Pro Max and similar large devices */
+@media (min-width: 414px) and (max-width: 480px) {
+    .display {
+        font-size: 32px;
+        padding: 24px;
+        min-height: 64px;
+    }
+    
+    .key {
+        font-size: 24px;
+        padding: 18px;
+        min-height: 64px;
+    }
+    
+    .keypad {
+        min-height: 300px;
+        gap: 18px;
+    }
+    
+    .content-area {
+        padding-bottom: 300px;
+    }
+    
+    .total {
+        font-size: 24px;
+        padding: 20px;
+    }
+    
+    .number-item {
+        font-size: 18px;
+        padding: 16px 20px;
+    }
+}
+
+/* Foldable devices and unusual aspect ratios */
+@media (max-width: 768px) and (min-aspect-ratio: 3/2) and (max-aspect-ratio: 2/1) {
+    .content-area {
+        flex-direction: row;
+        gap: 16px;
+        padding-bottom: 220px;
+    }
+    
+    .left {
+        flex: 0 0 45%;
+    }
+    
+    .right {
+        flex: 1;
+        margin: 0;
+    }
+    
+    .keypad {
+        min-height: 220px;
+        gap: 14px;
+    }
+}
+
+/* High DPI displays - enhance visual clarity */
+@media (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2), 
+       (max-width: 768px) and (min-resolution: 192dpi) {
+    .key {
+        border-width: 1px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .display, .total {
+        border: 1px solid #e9ecef;
+    }
+    
+    .toggle-switch {
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Support for devices with notches and safe areas */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        .keypad {
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
+        
+        .content-area {
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+        }
+        
+        .left, .right {
+            padding-left: max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+        }
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .key::before {
+        display: none;
+    }
+}
+
+/* Dark mode support for better mobile experience */
+@media (prefers-color-scheme: dark) and (max-width: 768px) {
+    body {
+        background: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .left, .right, .keypad {
+        background: #2d2d2d;
+    }
+    
+    .display {
+        background: #3a3a3a;
+        color: #ffffff;
+        border-color: #555;
+    }
+    
+    .key {
+        background: #3a3a3a;
+        color: #ffffff;
+        border-color: #555;
+    }
+    
+    .key:hover {
+        background: #4a4a4a;
+        border-color: #666;
+    }
+    
+    .key:active {
+        background: #2a2a2a;
+    }
+    
+    .total {
+        background: #1a3a1a;
+        color: #90ee90;
+        border-color: #2a5a2a;
+    }
+    
+    .number-item {
+        background: #2a4a5a;
+        color: #ffffff;
+    }
+    
+    .number-item:hover {
+        background: #3a5a6a;
+    }
+    
+    .toggle-switch {
+        background: #4a4a4a;
+    }
+    
+    .toggle-switch.active {
+        background: #0066cc;
     }
 }
