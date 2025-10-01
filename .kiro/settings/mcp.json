@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "browser_click",
+        "browser_resize"
+      ]
+    }
+  }
+}

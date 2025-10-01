@@ -1,296 +1,339 @@
-const display = document.getElementById('display');
-const numbers = document.getElementById('numbers');
-const totalEl = document.getElementById('total');
-const modeToggle = document.getElementById('modeToggle');
-const keys = document.querySelectorAll('.key');
-
-let total = 0;
-let currentNumber = 0;
-let currencyMode = false;
-let inputString = '';
-let numberHistory = [];
-
-function formatValue(value) {
-    return currencyMode ? `$${(value / 100).toFixed(2)}` : value.toString();
-}
-
-function updateDisplay() {
-    display.textContent = formatValue(currentNumber);
-    totalEl.textContent = formatValue(total);
-}
-
-function animateValueChange(element) {
-    // Add a subtle scale animation to indicate value change
-    element.style.transform = 'scale(1.05)';
-    element.style.transition = 'transform 0.15s cubic-bezier(0.4, 0.0, 0.2, 1)';
-    
-    setTimeout(() => {
-        element.style.transform = 'scale(1)';
-    }, 150);
-}
-
-function addNumber() {
-    if (currentNumber !== 0) {
-        total += currentNumber;
+class Calculator {
+    constructor() {
+        this.primaryDisplay = document.getElementById('primaryDisplay');
+        this.secondaryDisplay = document.getElementById('secondaryDisplay');
+        this.runningElement = document.querySelector('.running');
         
-        const item = document.createElement('div');
-        item.className = 'number-item';
-        item.textContent = formatValue(currentNumber);
+        this.currentValue = '0';
+        this.previousValue = null;
+        this.operator = null;
+        this.waitingForOperand = false;
+        this.runningTotal = 0;
+        this.addedNumbers = [];
         
-        const valueToStore = currentNumber;
-        item.onclick = () => removeNumber(item, valueToStore);
-        
-        // Add staggered animation delay for multiple items
-        const itemCount = numbers.children.length;
-        item.style.animationDelay = `${itemCount * 0.05}s`;
-        
-        numbers.appendChild(item);
-        
-        // Smooth scroll to bottom to show new item
-        setTimeout(() => {
-            numbers.scrollTop = numbers.scrollHeight;
-        }, 100);
-        
-        numberHistory.push(currentNumber);
-        currentNumber = 0;
-        inputString = '';
-        updateDisplay();
-        
-        // Add subtle animation to total when it changes
-        animateValueChange(totalEl);
-    }
-}
-
-function removeNumber(element, value) {
-    total -= value;
-    
-    // Add removal animation
-    element.style.transform = 'translateX(100%)';
-    element.style.opacity = '0';
-    element.style.transition = 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)';
-    
-    setTimeout(() => {
-        element.remove();
-    }, 300);
-    
-    const index = numberHistory.indexOf(value);
-    if (index > -1) numberHistory.splice(index, 1);
-    updateDisplay();
-    
-    // Add subtle animation to total when it changes
-    animateValueChange(totalEl);
-}
-
-function editLastNumber() {
-    if (numberHistory.length > 0) {
-        const lastValue = numberHistory.pop();
-        total -= lastValue;
-        numbers.removeChild(numbers.lastElementChild);
-        
-        currentNumber = lastValue;
-        inputString = Math.abs(lastValue).toString();
-        if (lastValue < 0) inputString = '-' + inputString;
-        updateDisplay();
-    }
-}
-
-modeToggle.addEventListener('click', () => {
-    currencyMode = !currencyMode;
-    modeToggle.classList.toggle('active', currencyMode);
-    
-    // Add haptic feedback if supported
-    if (navigator.vibrate) {
-        navigator.vibrate(50);
+        this.initializeEventListeners();
+        this.updateRunningDisplay();
     }
     
-    // Animate display and total changes
-    animateValueChange(display);
-    animateValueChange(totalEl);
-    
-    // Update all number items with animation
-    const items = numbers.querySelectorAll('.number-item');
-    items.forEach((item, index) => {
-        setTimeout(() => {
-            const value = numberHistory[index];
-            item.textContent = formatValue(value);
-            animateValueChange(item);
-        }, index * 50);
-    });
-    
-    updateDisplay();
-});
-
-keys.forEach(key => {
-    key.addEventListener('click', () => {
-        const keyValue = key.dataset.key;
+    initializeEventListeners() {
+        // Number buttons
+        document.querySelectorAll('.key[data-number]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.handleNumber(e.target.dataset.number);
+            });
+        });
         
-        // Add haptic feedback for key presses
-        if (navigator.vibrate) {
-            navigator.vibrate(30);
+        // Operator buttons
+        document.querySelectorAll('.key[data-action]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.handleAction(e.target.dataset.action);
+            });
+        });
+        
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            this.handleKeyboard(e);
+        });
+    }
+    
+    handleNumber(number) {
+        console.log(`Number pressed: ${number}`);
+        
+        if (this.waitingForOperand) {
+            this.currentValue = number;
+            this.waitingForOperand = false;
+        } else {
+            this.currentValue = this.currentValue === '0' ? number : this.currentValue + number;
         }
         
-        if (keyValue >= '0' && keyValue <= '9') {
-            inputString += keyValue;
-            currentNumber = parseInt(inputString) || 0;
-            updateDisplay();
-            animateValueChange(display);
-        } else if (keyValue === '-') {
-            if (inputString === '') {
-                inputString = '-';
-                currentNumber = 0;
-                updateDisplay();
-            } else {
-                inputString = inputString.startsWith('-') ? inputString.slice(1) : '-' + inputString;
-                currentNumber = parseInt(inputString) || 0;
-                updateDisplay();
+        this.updateDisplay();
+    } 
+   
+    handleAction(action) {
+        console.log(`Action pressed: ${action}`);
+        
+        switch (action) {
+            case 'clear':
+                this.clear();
+                break;
+            case 'sign':
+                this.toggleSign();
+                break;
+            case 'percent':
+                this.percentage();
+                break;
+            case 'decimal':
+                this.decimal();
+                break;
+            case 'add':
+            case 'subtract':
+            case 'multiply':
+            case 'divide':
+                this.setOperator(action);
+                break;
+            case 'equals':
+                this.calculate();
+                break;
+        }
+    }
+    
+    handleKeyboard(e) {
+        const key = e.key;
+        
+        // Numbers
+        if (key >= '0' && key <= '9') {
+            this.handleNumber(key);
+        }
+        
+        // Operators
+        switch (key) {
+            case '+':
+                this.handleAction('add');
+                break;
+            case '-':
+                this.handleAction('subtract');
+                break;
+            case '*':
+                this.handleAction('multiply');
+                break;
+            case '/':
+                e.preventDefault();
+                this.handleAction('divide');
+                break;
+            case '=':
+            case 'Enter':
+                this.handleAction('equals');
+                break;
+            case '.':
+                this.handleAction('decimal');
+                break;
+            case 'Escape':
+                this.handleAction('clear');
+                break;
+            case 'Backspace':
+                this.backspace();
+                break;
+        }
+    }   
+ 
+    clear() {
+        console.log('Clear pressed');
+        this.currentValue = '0';
+        this.previousValue = null;
+        this.operator = null;
+        this.waitingForOperand = false;
+        this.runningTotal = 0;
+        this.addedNumbers = [];
+        this.updateDisplay();
+        this.updateRunningDisplay();
+        this.clearOperatorHighlight();
+    }
+    
+    toggleSign() {
+        console.log('Toggle sign pressed');
+        if (this.currentValue !== '0') {
+            this.currentValue = this.currentValue.startsWith('-') 
+                ? this.currentValue.slice(1) 
+                : '-' + this.currentValue;
+            this.updateDisplay();
+        }
+    }
+    
+    percentage() {
+        console.log('Percentage pressed');
+        const value = parseFloat(this.currentValue);
+        this.currentValue = (value / 100).toString();
+        this.updateDisplay();
+    }
+    
+    decimal() {
+        console.log('Decimal pressed');
+        if (this.waitingForOperand) {
+            this.currentValue = '0.';
+            this.waitingForOperand = false;
+        } else if (this.currentValue.indexOf('.') === -1) {
+            this.currentValue += '.';
+        }
+        this.updateDisplay();
+    }   
+ 
+    setOperator(nextOperator) {
+        console.log(`Operator set: ${nextOperator}`);
+        
+        const inputValue = parseFloat(this.currentValue);
+        
+        if (this.previousValue === null) {
+            this.previousValue = inputValue;
+            // If this is the first addition operation, track the first number
+            if (nextOperator === 'add' && this.addedNumbers.length === 0) {
+                this.addedNumbers.push(inputValue);
+                this.runningTotal = inputValue;
+                this.updateRunningDisplay();
             }
-            animateValueChange(display);
-        } else if (keyValue === '+') {
-            addNumber();
+        } else if (this.operator) {
+            // Perform calculation with current values before setting new operator
+            const newValue = this.performCalculation();
+            
+            this.currentValue = String(newValue);
+            this.previousValue = newValue;
         }
-    });
-    
-    // Add touch start and end events for better mobile feedback
-    key.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        key.style.transform = 'scale(0.95)';
-    });
-    
-    key.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        setTimeout(() => {
-            key.style.transform = '';
-        }, 100);
-    });
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key >= '0' && e.key <= '9') {
-        inputString += e.key;
-        currentNumber = parseInt(inputString) || 0;
-        updateDisplay();
-        animateValueChange(display);
         
-        // Animate corresponding key button
-        const keyButton = document.querySelector(`[data-key="${e.key}"]`);
-        if (keyButton) {
-            animateKeyPress(keyButton);
+        this.waitingForOperand = true;
+        this.operator = nextOperator;
+        this.updateDisplay();
+        this.highlightOperator(nextOperator);
+    }
+    
+    calculate() {
+        console.log('Calculate pressed');
+        
+        const inputValue = parseFloat(this.currentValue);
+        
+        if (this.previousValue !== null && this.operator) {
+            const newValue = this.performCalculation();
+            this.currentValue = String(newValue);
+            this.previousValue = null;
+            this.operator = null;
+            this.waitingForOperand = true;
+            this.updateDisplay();
+            this.clearOperatorHighlight();
         }
-    } else if (e.key === 'Backspace') {
-        if (inputString === '') {
-            editLastNumber();
+    }
+    
+    performCalculation() {
+        const prev = this.previousValue;
+        const current = parseFloat(this.currentValue);
+        
+        if (prev === null || this.operator === null) {
+            return current;
+        }
+        
+        let result;
+        
+        switch (this.operator) {
+            case 'add':
+                result = prev + current;
+                // Track the number being added
+                this.addedNumbers.push(current);
+                this.runningTotal += current;
+                this.updateRunningDisplay();
+                break;
+            case 'subtract':
+                result = prev - current;
+                break;
+            case 'multiply':
+                result = prev * current;
+                break;
+            case 'divide':
+                if (current === 0) {
+                    alert('Cannot divide by zero');
+                    return prev;
+                }
+                result = prev / current;
+                break;
+            default:
+                return current;
+        }
+        
+        // Round to avoid floating point precision issues
+        result = Math.round((result + Number.EPSILON) * 100000000) / 100000000;
+        
+        console.log(`${prev} ${this.operator} ${current} = ${result}`);
+        return result;
+    } 
+   
+    backspace() {
+        if (this.currentValue.length > 1) {
+            this.currentValue = this.currentValue.slice(0, -1);
         } else {
-            inputString = inputString.slice(0, -1);
-            currentNumber = parseInt(inputString) || 0;
-            updateDisplay();
-            animateValueChange(display);
+            this.currentValue = '0';
         }
-    } else if (e.key === 'Enter' || e.key === ' ' || e.key === '+') {
-        addNumber();
-        const addButton = document.querySelector('[data-key="+"]');
-        if (addButton) {
-            animateKeyPress(addButton);
-        }
-    } else if (e.key === '-') {
-        if (inputString === '') {
-            inputString = '-';
-            currentNumber = 0;
-            updateDisplay();
-        } else {
-            inputString = inputString.startsWith('-') ? inputString.slice(1) : '-' + inputString;
-            currentNumber = parseInt(inputString) || 0;
-            updateDisplay();
-        }
-        animateValueChange(display);
-        
-        const minusButton = document.querySelector('[data-key="-"]');
-        if (minusButton) {
-            animateKeyPress(minusButton);
-        }
+        this.updateDisplay();
     }
-});
-
-function animateKeyPress(keyElement) {
-    keyElement.style.transform = 'scale(0.95)';
-    keyElement.style.transition = 'transform 0.1s cubic-bezier(0.4, 0.0, 0.2, 1)';
     
-    setTimeout(() => {
-        keyElement.style.transform = '';
-    }, 100);
-}
-
-updateDisplay();
-
-// Ensure page can receive keyboard events
-document.body.setAttribute('tabindex', '0');
-document.body.focus();
-
-// Handle orientation changes and viewport adjustments
-function handleOrientationChange() {
-    // Force a layout recalculation after orientation change
-    setTimeout(() => {
-        // Update viewport height for mobile browsers
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    updateDisplay() {
+        // Format the display value
+        let displayValue = this.currentValue;
         
-        // Scroll to top to ensure proper layout
-        window.scrollTo(0, 0);
-        
-        // Ensure numbers container scrolls to bottom if it has content
-        if (numbers.children.length > 0) {
-            setTimeout(() => {
-                numbers.scrollTop = numbers.scrollHeight;
-            }, 100);
+        // Handle very long numbers
+        if (displayValue.length > 12) {
+            const num = parseFloat(displayValue);
+            if (Math.abs(num) >= 1e12 || (Math.abs(num) < 1e-6 && num !== 0)) {
+                displayValue = num.toExponential(6);
+            } else {
+                displayValue = num.toPrecision(12).replace(/\.?0+$/, '');
+            }
         }
-    }, 100);
-}
-
-// Set initial viewport height
-const vh = window.innerHeight * 0.01;
-document.documentElement.style.setProperty('--vh', `${vh}px`);
-
-// Listen for orientation changes
-window.addEventListener('orientationchange', handleOrientationChange);
-window.addEventListener('resize', handleOrientationChange);
-
-// Handle viewport changes for mobile browsers (address bar hiding/showing)
-let lastHeight = window.innerHeight;
-window.addEventListener('resize', () => {
-    const currentHeight = window.innerHeight;
-    if (Math.abs(currentHeight - lastHeight) > 100) {
-        handleOrientationChange();
-        lastHeight = currentHeight;
+        
+        this.primaryDisplay.textContent = displayValue;
+        
+        // Update secondary display with operation
+        if (this.previousValue !== null && this.operator) {
+            const operatorSymbols = {
+                'add': '+',
+                'subtract': '−',
+                'multiply': '×',
+                'divide': '÷'
+            };
+            let prevDisplay = this.previousValue.toString();
+            if (prevDisplay.length > 10) {
+                prevDisplay = parseFloat(prevDisplay).toPrecision(6);
+            }
+            this.secondaryDisplay.textContent = `${prevDisplay} ${operatorSymbols[this.operator]}`;
+        } else {
+            this.secondaryDisplay.textContent = '';
+        }
     }
-});
-
-// Prevent zoom on double tap for better mobile experience
-let lastTouchEnd = 0;
-document.addEventListener('touchend', (event) => {
-    const now = (new Date()).getTime();
-    if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
+    
+    highlightOperator(operator) {
+        // Clear previous highlights
+        this.clearOperatorHighlight();
+        
+        // Highlight current operator
+        const operatorButton = document.querySelector(`[data-action="${operator}"]`);
+        if (operatorButton) {
+            operatorButton.classList.add('active');
+        }
     }
-    lastTouchEnd = now;
-}, false);
-
-// Improve touch scrolling performance
-if ('scrollBehavior' in document.documentElement.style) {
-    numbers.style.scrollBehavior = 'smooth';
+    
+    clearOperatorHighlight() {
+        document.querySelectorAll('.key.operator').forEach(button => {
+            button.classList.remove('active');
+        });
+    }
+    
+    updateRunningDisplay() {
+        // Clear the running display
+        this.runningElement.innerHTML = '';
+        
+        // Add each number that was added
+        this.addedNumbers.forEach((number, index) => {
+            const item = document.createElement('div');
+            item.className = 'running-item';
+            
+            const numberSpan = document.createElement('span');
+            numberSpan.className = 'running-number';
+            numberSpan.textContent = `+${number}`;
+            
+            const totalSpan = document.createElement('span');
+            totalSpan.className = 'running-total';
+            
+            // Calculate running total up to this point
+            const runningSum = this.addedNumbers.slice(0, index + 1).reduce((sum, num) => sum + num, 0);
+            totalSpan.textContent = `= ${runningSum}`;
+            
+            item.appendChild(numberSpan);
+            item.appendChild(totalSpan);
+            this.runningElement.appendChild(item);
+        });
+        
+        // Auto-scroll to bottom to show latest additions
+        this.runningElement.scrollTop = this.runningElement.scrollHeight;
+    }
 }
 
-// Add visual feedback for device orientation
-function updateOrientationClass() {
-    const isLandscape = window.innerWidth > window.innerHeight;
-    document.body.classList.toggle('landscape', isLandscape);
-    document.body.classList.toggle('portrait', !isLandscape);
-}
-
-updateOrientationClass();
-window.addEventListener('orientationchange', () => {
-    setTimeout(updateOrientationClass, 100);
+// Initialize calculator when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Calculator initialized');
+    new Calculator();
 });
-window.addEventListener('resize', updateOrientationClass);
-
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/quick-add/sw.js');
-}

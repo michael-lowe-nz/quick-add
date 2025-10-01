@@ -1,56 +1,325 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#007bff">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a1a">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Quick Add">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Quick Add Calculator</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Calculator">
+    <title>Calculator</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-180.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            height: 100vh;
+            /* Fallback for older browsers */
+            height: 100dvh;
+            /* Dynamic viewport height for mobile */
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            height: 100vh;
+            /* Fallback for older browsers */
+            height: 100dvh;
+            /* Dynamic viewport height for mobile */
+            width: 100vw;
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            touch-action: manipulation;
+            -ms-touch-action: manipulation;
+        }
+
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            height: 100vh;
+            /* Fallback for older browsers */
+            height: 100dvh;
+            /* Dynamic viewport height for mobile */
+            width: 100vw;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            margin: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            grid-template-areas:
+                "running running display display"
+                "running running display display"
+                "seven eight nine subtract"
+                "four five six add"
+                "one two three add"
+                "clear clear zero add";
+        }
+
+        .running {
+            grid-area: running;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        .running::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .running::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .running::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .running::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .running-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+
+        .running-number {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .running-total {
+            color: rgba(76, 175, 80, 0.8);
+            font-size: 12px;
+        }
+
+        .display {
+            grid-area: display;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px 25px;
+            text-align: right;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .display-secondary {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+            min-height: 22px;
+        }
+
+        .display-primary {
+            font-size: 48px;
+            font-weight: 300;
+            color: white;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        /* Grid area assignments for buttons */
+        .key[data-action="clear"] {
+            grid-area: clear;
+        }
+
+        .key[data-action="sign"] {
+            grid-area: sign;
+        }
+
+        .key[data-action="percent"] {
+            grid-area: percent;
+        }
+
+        .key[data-action="divide"] {
+            grid-area: divide;
+        }
+
+        .key[data-number="7"] {
+            grid-area: seven;
+        }
+
+        .key[data-number="8"] {
+            grid-area: eight;
+        }
+
+        .key[data-number="9"] {
+            grid-area: nine;
+        }
+
+        .key[data-action="multiply"] {
+            grid-area: multiply;
+        }
+
+        .key[data-number="4"] {
+            grid-area: four;
+        }
+
+        .key[data-number="5"] {
+            grid-area: five;
+        }
+
+        .key[data-number="6"] {
+            grid-area: six;
+        }
+
+        .key[data-action="subtract"] {
+            grid-area: subtract;
+        }
+
+        .key[data-number="1"] {
+            grid-area: one;
+        }
+
+        .key[data-number="2"] {
+            grid-area: two;
+        }
+
+        .key[data-number="3"] {
+            grid-area: three;
+        }
+
+        .key[data-action="add"] {
+            grid-area: add;
+        }
+
+        .key[data-number="0"] {
+            grid-area: zero;
+        }
+
+        .key {
+            border: none;
+            font-size: 24px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            -ms-touch-action: manipulation;
+        }
+
+        .key:active {
+            transform: scale(0.95);
+        }
+
+        .key.number {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .key.number:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .key.operator {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .key.operator:hover {
+            background: linear-gradient(135deg, #ff7b45 0%, #f8a32e 100%);
+        }
+
+        .key.operator.active {
+            background: linear-gradient(135deg, #ff8b55 0%, #f9b33e 100%);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .key.function {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+
+        .key.function:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .key.equals {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .key.equals:hover {
+            background: linear-gradient(135deg, #5CBF60 0%, #55b059 100%);
+        }
+    </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="content-area">
-            <div class="left">
-                <div class="toggle">
-                    <div class="toggle-switch" id="modeToggle">
-                        <div class="toggle-track">
-                            <span class="toggle-label left">Numbers</span>
-                            <span class="toggle-label right">Dollars</span>
-                        </div>
-                        <div class="toggle-thumb"></div>
-                    </div>
-                </div>
-                <div class="display" id="display">0</div>
-            </div>
-            <div class="right">
-                <div class="numbers" id="numbers"></div>
-                <div class="plus-icon">+</div>
-                <div class="total">Total: <span id="total">0</span></div>
-            </div>
+    <div class="calculator">
+        <div class="running">
         </div>
-        <div class="keypad">
-            <button class="key" data-key="7">7</button>
-            <button class="key" data-key="8">8</button>
-            <button class="key" data-key="9">9</button>
-            <button class="key" data-key="4">4</button>
-            <button class="key" data-key="5">5</button>
-            <button class="key" data-key="6">6</button>
-            <button class="key" data-key="1">1</button>
-            <button class="key" data-key="2">2</button>
-            <button class="key" data-key="3">3</button>
-            <button class="key" data-key="-">+/-</button>
-            <button class="key" data-key="0">0</button>
-            <button class="key add" data-key="+">+</button>
+        <div class="display">
+            <div class="display-secondary" id="secondaryDisplay"></div>
+            <div class="display-primary" id="primaryDisplay">0</div>
         </div>
+
+        <!-- Function row -->
+        <button class="key function" data-action="clear">AC</button>
+        <button class="key operator" data-action="subtract">−</button>
+
+        <!-- Number rows -->
+        <button class="key number" data-number="7">7</button>
+        <button class="key number" data-number="8">8</button>
+        <button class="key number" data-number="9">9</button>
+
+        <button class="key number" data-number="4">4</button>
+        <button class="key number" data-number="5">5</button>
+        <button class="key number" data-number="6">6</button>
+
+        <button class="key number" data-number="1">1</button>
+        <button class="key number" data-number="2">2</button>
+        <button class="key number" data-number="3">3</button>
+        <button class="key operator" data-action="add">+</button>
+
+        <!-- Bottom row -->
+        <button class="key number" data-number="0">0</button>
     </div>
+
     <script src="script.js"></script>
 </body>
+
 </html>

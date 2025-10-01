@@ -1,0 +1,32 @@
+{
+  "name": "quick-add",
+  "version": "1.0.0",
+  "main": "script.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "playwright": "^1.54.1",
+    "playwright-core": "^1.54.1"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "scripts": {
+    "start": "live-server --host=0.0.0.0 --port=8080 --open=/",
+    "dev": "live-server --host=0.0.0.0 --port=8080",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michael-lowe-nz/quick-add.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/michael-lowe-nz/quick-add/issues"
+  },
+  "homepage": "https://github.com/michael-lowe-nz/quick-add#readme",
+  "description": ""
+}
