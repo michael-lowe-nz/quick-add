@@ -14,6 +14,8 @@ class Calculator {
         this.dollarMode = false; // Track if we're in dollar mode
 
         this.initializeEventListeners();
+        this.loadState(); // Load saved state from localStorage
+        this.updateDisplay();
         this.updateRunningDisplay();
     }
 
@@ -55,6 +57,7 @@ class Calculator {
         }
 
         this.updateDisplay();
+        this.saveState(); // Save state after number input
     }
 
     handleAction(action) {
@@ -136,12 +139,68 @@ class Calculator {
         this.updateDisplay();
         this.updateRunningDisplay();
         this.clearOperatorHighlight();
+        this.saveState(); // Save state after clearing
+    }
+
+    saveState() {
+        const state = {
+            currentValue: this.currentValue,
+            previousValue: this.previousValue,
+            operator: this.operator,
+            waitingForOperand: this.waitingForOperand,
+            runningTotal: this.runningTotal,
+            addedNumbers: this.addedNumbers,
+            lastAddedValue: this.lastAddedValue,
+            dollarMode: this.dollarMode
+        };
+
+        try {
+            localStorage.setItem('calculatorState', JSON.stringify(state));
+        } catch (error) {
+            console.warn('Could not save calculator state:', error);
+        }
+    }
+
+    loadState() {
+        try {
+            const savedState = localStorage.getItem('calculatorState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+
+                this.currentValue = state.currentValue || '0';
+                this.previousValue = state.previousValue || null;
+                this.operator = state.operator || null;
+                this.waitingForOperand = state.waitingForOperand || false;
+                this.runningTotal = state.runningTotal || 0;
+                this.addedNumbers = state.addedNumbers || [];
+                this.lastAddedValue = state.lastAddedValue || null;
+                this.dollarMode = state.dollarMode || false;
+
+                // Update dollar button appearance if in dollar mode
+                if (this.dollarMode) {
+                    const dollarButton = document.querySelector('[data-number="dollar"]');
+                    if (dollarButton) {
+                        dollarButton.classList.add('active');
+                        dollarButton.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+                    }
+                }
+
+                // Restore operator highlight if there's an active operator
+                if (this.operator) {
+                    this.highlightOperator(this.operator);
+                }
+
+                console.log('Calculator state loaded from localStorage');
+            }
+        } catch (error) {
+            console.warn('Could not load calculator state:', error);
+        }
     }
 
     toggleDollarMode() {
         console.log('Dollar mode toggled');
         this.dollarMode = !this.dollarMode;
-        
+
         // Update the dollar button appearance
         const dollarButton = document.querySelector('[data-number="dollar"]');
         if (dollarButton) {
@@ -153,8 +212,9 @@ class Calculator {
                 dollarButton.style.background = '';
             }
         }
-        
+
         this.updateDisplay();
+        this.saveState(); // Save state after dollar mode toggle
     }
 
     parseDollarValue(value) {
@@ -176,6 +236,7 @@ class Calculator {
                 ? this.currentValue.slice(1)
                 : '-' + this.currentValue;
             this.updateDisplay();
+            this.saveState(); // Save state after sign toggle
         }
     }
 
@@ -184,6 +245,7 @@ class Calculator {
         const value = parseFloat(this.currentValue);
         this.currentValue = (value / 100).toString();
         this.updateDisplay();
+        this.saveState(); // Save state after percentage
     }
 
     decimal() {
@@ -195,6 +257,7 @@ class Calculator {
             this.currentValue += '.';
         }
         this.updateDisplay();
+        this.saveState(); // Save state after decimal
     }
 
     setOperator(nextOperator) {
@@ -210,6 +273,7 @@ class Calculator {
             this.previousValue = newValue;
             this.waitingForOperand = true;
             this.updateDisplay();
+            this.saveState(); // Save state after repeated addition
             return;
         }
 
@@ -236,6 +300,7 @@ class Calculator {
         this.operator = nextOperator;
         this.updateDisplay();
         this.highlightOperator(nextOperator);
+        this.saveState(); // Save state after setting operator
     }
 
     calculate() {
@@ -251,6 +316,7 @@ class Calculator {
             this.waitingForOperand = true;
             this.updateDisplay();
             this.clearOperatorHighlight();
+            this.saveState(); // Save state after calculation
         }
     }
 
@@ -304,6 +370,7 @@ class Calculator {
             this.currentValue = '0';
         }
         this.updateDisplay();
+        this.saveState(); // Save state after backspace
     }
 
     updateDisplay() {
@@ -343,10 +410,10 @@ class Calculator {
                 'multiply': '×',
                 'divide': '÷'
             };
-            let prevDisplay = this.dollarMode ? 
-                this.formatDollarDisplay(this.previousValue) : 
+            let prevDisplay = this.dollarMode ?
+                this.formatDollarDisplay(this.previousValue) :
                 this.previousValue.toString();
-            
+
             if (!this.dollarMode && prevDisplay.length > 10) {
                 prevDisplay = parseFloat(prevDisplay).toPrecision(6);
             }
@@ -359,7 +426,7 @@ class Calculator {
     adjustFontSize() {
         const text = this.primaryDisplay.textContent;
         const length = text.length;
-        
+
         // Calculate font size based on text length
         let fontSize;
         if (length <= 8) {
@@ -373,7 +440,7 @@ class Calculator {
         } else {
             fontSize = '24px';
         }
-        
+
         this.primaryDisplay.style.fontSize = fontSize;
     }
 
@@ -405,7 +472,7 @@ class Calculator {
 
             const numberSpan = document.createElement('span');
             numberSpan.className = 'running-number';
-            
+
             // Format number display based on dollar mode
             const displayNumber = this.dollarMode ? this.formatDollarDisplay(number) : number;
             numberSpan.textContent = `+${displayNumber}`;
