@@ -53,8 +53,8 @@
 
         .calculator {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(6, 1fr);
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 55%;
             height: 100vh;
             /* Fallback for older browsers */
             height: 100dvh;
@@ -65,13 +65,28 @@
             margin: 0;
             box-sizing: border-box;
             overflow: hidden;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            /* height: 100vh; */
+            /* Fallback for older browsers */
+            /* height: 100dvh; */
+            /* Dynamic viewport height for mobile */
+            /* width: 100vw; */
+            background: rgba(0, 0, 0, 0.8);
+            /* padding: 10px; */
+            margin: 0;
+            box-sizing: border-box;
+            overflow: hidden;
             grid-template-areas:
-                "running running display display"
-                "running running display display"
-                "seven eight nine subtract"
+                "clear clear clear add"
+                "seven eight nine add"
                 "four five six add"
                 "one two three add"
-                "clear clear zero add";
+                "dollar zero doublezero add";
         }
 
         .running {
@@ -126,15 +141,16 @@
         }
 
         .display {
-            grid-area: display;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-areas: 
+                "running running disaplay display";
             background: rgba(255, 255, 255, 0.05);
-            padding: 30px 25px;
-            text-align: right;
+            /* padding: 30px 25px; */
+            /* text-align: right; */
             border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
+
 
         .display-secondary {
             font-size: 18px;
@@ -222,6 +238,14 @@
             grid-area: zero;
         }
 
+        .key[data-number="00"] {
+            grid-area: doublezero;
+        }
+
+        .key[data-number="dollar"] {
+            grid-area: dollar;
+        }
+
         .key {
             border: none;
             font-size: 24px;
@@ -230,6 +254,7 @@
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
+            overflow: hidden;
             justify-content: center;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -290,33 +315,38 @@
 
 <body>
     <div class="calculator">
-        <div class="running">
-        </div>
         <div class="display">
-            <div class="display-secondary" id="secondaryDisplay"></div>
-            <div class="display-primary" id="primaryDisplay">0</div>
+            <div class="running">
+            </div>
+            <div class="display-container">
+                <div class="display-secondary" id="secondaryDisplay"></div>
+                <div class="display-primary" id="primaryDisplay">0</div>
+            </div>
         </div>
 
-        <!-- Function row -->
-        <button class="key function" data-action="clear">AC</button>
-        <button class="key operator" data-action="subtract">−</button>
-
-        <!-- Number rows -->
-        <button class="key number" data-number="7">7</button>
-        <button class="key number" data-number="8">8</button>
-        <button class="key number" data-number="9">9</button>
-
-        <button class="key number" data-number="4">4</button>
-        <button class="key number" data-number="5">5</button>
-        <button class="key number" data-number="6">6</button>
-
-        <button class="key number" data-number="1">1</button>
-        <button class="key number" data-number="2">2</button>
-        <button class="key number" data-number="3">3</button>
-        <button class="key operator" data-action="add">+</button>
-
-        <!-- Bottom row -->
-        <button class="key number" data-number="0">0</button>
+        <div class="keypad">
+            <!-- Function row -->
+            <button class="key function" data-action="clear">AC</button>
+    
+            <!-- Number rows -->
+            <button class="key number" data-number="7">7</button>
+            <button class="key number" data-number="8">8</button>
+            <button class="key number" data-number="9">9</button>
+    
+            <button class="key number" data-number="4">4</button>
+            <button class="key number" data-number="5">5</button>
+            <button class="key number" data-number="6">6</button>
+    
+            <button class="key number" data-number="1">1</button>
+            <button class="key number" data-number="2">2</button>
+            <button class="key number" data-number="3">3</button>
+            <button class="key operator" data-action="add">+</button>
+    
+            <!-- Bottom row -->
+            <button class="key number" data-number="0">0</button>
+            <button class="key number" data-number="00">00</button>
+            <button class="key number" data-number="dollar">$</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
