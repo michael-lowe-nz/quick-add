@@ -1,0 +1,365 @@
+/* ===========================================
+   RESET & BASE STYLES
+   =========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    height: 100vh;
+    /* Fallback for older browsers */
+    height: 100dvh;
+    /* Dynamic viewport height for mobile */
+    width: 100vw;
+    overflow: hidden;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: white;
+    height: 100vh;
+    /* Fallback for older browsers */
+    height: 100dvh;
+    /* Dynamic viewport height for mobile */
+    width: 100vw;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+}
+
+/* ===========================================
+   CALCULATOR CONTAINER
+   =========================================== */
+.calculator {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 35% 65%;
+    height: 100vh;
+    /* Fallback for older browsers */
+    height: 100dvh;
+    /* Dynamic viewport height for mobile */
+    width: 100vw;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* ===========================================
+   TOP DISPLAY AREA
+   =========================================== */
+.display {
+    display: grid;
+    grid-template-columns: 40% 1fr;
+    grid-template-areas:
+        "running display-container";
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    height: 100%;
+    overflow: hidden;
+    min-width: 0;
+    /* Ensure grid items can shrink */
+}
+
+/* Running Column (Left Side) */
+.running {
+    grid-area: running;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    height: 100%;
+    max-height: 100%;
+}
+
+.running::-webkit-scrollbar {
+    width: 4px;
+}
+
+.running::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.running::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.running::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.running-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 12px;
+    /* Smaller base font size for the entire item */
+}
+
+.running-number {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    /* Smaller font for the added number */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60%;
+    /* Limit width to prevent overflow */
+}
+
+.running-total {
+    color: rgba(76, 175, 80, 0.8);
+    font-size: 9px;
+    /* Even smaller font for the running total */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 35%;
+    /* Limit width to prevent overflow */
+    text-align: right;
+}
+
+/* Main Display (Right Side) */
+.display-container {
+    grid-area: display-container;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 30px 25px;
+    text-align: right;
+    height: 100%;
+    min-width: 0;
+    /* Allow shrinking */
+    overflow: hidden;
+    /* Prevent overflow from pushing layout */
+}
+
+.display-secondary {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+    min-height: 22px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.display-primary {
+    font-size: 48px;
+    font-weight: 300;
+    color: white;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    white-space: nowrap;
+    overflow: hidden;
+    min-width: 0;
+    /* Allow shrinking */
+
+    /* Auto-scale font size for long numbers */
+    font-size: clamp(24px, 8vw, 48px);
+}
+
+/* ===========================================
+   BOTTOM KEYPAD AREA
+   =========================================== */
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr 2fr 2fr 2fr 2fr;
+    background: rgba(0, 0, 0, 0.8);
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    height: 100%;
+    max-height: 100%;
+    grid-template-areas:
+        "clear clear clear add"
+        "seven eight nine add"
+        "four five six add"
+        "one two three add"
+        "dollar zero doublezero add";
+}
+
+/* ===========================================
+   KEYPAD BUTTONS
+   =========================================== */
+.key {
+    border: none;
+    font-size: 24px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+}
+
+.key:active {
+    transform: scale(0.95);
+}
+
+/* Number Keys */
+.key.number {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.key.number:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Dollar Key Active State */
+.key.number.active {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+}
+
+/* Operator Keys */
+.key.operator {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.key.operator:hover {
+    background: linear-gradient(135deg, #ff7b45 0%, #f8a32e 100%);
+}
+
+.key.operator.active {
+    background: linear-gradient(135deg, #ff8b55 0%, #f9b33e 100%);
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+}
+
+/* Function Keys */
+.key.function {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-weight: 600;
+}
+
+.key.function:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Equals Key */
+.key.equals {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.key.equals:hover {
+    background: linear-gradient(135deg, #5CBF60 0%, #55b059 100%);
+}
+
+/* ===========================================
+   GRID AREA ASSIGNMENTS
+   =========================================== */
+.key[data-action="clear"] {
+    grid-area: clear;
+}
+
+.key[data-action="sign"] {
+    grid-area: sign;
+}
+
+.key[data-action="percent"] {
+    grid-area: percent;
+}
+
+.key[data-action="divide"] {
+    grid-area: divide;
+}
+
+.key[data-number="7"] {
+    grid-area: seven;
+}
+
+.key[data-number="8"] {
+    grid-area: eight;
+}
+
+.key[data-number="9"] {
+    grid-area: nine;
+}
+
+.key[data-action="multiply"] {
+    grid-area: multiply;
+}
+
+.key[data-number="4"] {
+    grid-area: four;
+}
+
+.key[data-number="5"] {
+    grid-area: five;
+}
+
+.key[data-number="6"] {
+    grid-area: six;
+}
+
+.key[data-action="subtract"] {
+    grid-area: subtract;
+}
+
+.key[data-number="1"] {
+    grid-area: one;
+}
+
+.key[data-number="2"] {
+    grid-area: two;
+}
+
+.key[data-number="3"] {
+    grid-area: three;
+}
+
+.key[data-action="add"] {
+    grid-area: add;
+}
+
+.key[data-number="0"] {
+    grid-area: zero;
+}
+
+.key[data-number="00"] {
+    grid-area: doublezero;
+}
+
+.key[data-number="dollar"] {
+    grid-area: dollar;
+}
