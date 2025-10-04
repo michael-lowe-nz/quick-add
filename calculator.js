@@ -14,9 +14,11 @@ class Calculator {
         this.dollarMode = false; // Track if we're in dollar mode
 
         this.initializeEventListeners();
+        this.initializeResizeHandle();
         this.loadState(); // Load saved state from localStorage
         this.updateDisplay();
         this.updateRunningDisplay();
+        this.updateClearButton();
     }
 
     initializeEventListeners() {
@@ -40,6 +42,80 @@ class Calculator {
         });
     }
 
+    initializeResizeHandle() {
+        const resizeHandle = document.getElementById('resizeHandle');
+        const calculator = document.querySelector('.calculator');
+        let isResizing = false;
+        let startY = 0;
+        let startHeight = 0;
+
+        const startResize = (e) => {
+            isResizing = true;
+            startY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+
+            // Get current display height percentage
+            const computedStyle = getComputedStyle(calculator);
+            const currentHeight = computedStyle.getPropertyValue('--display-height') || '35%';
+            startHeight = parseFloat(currentHeight);
+
+            document.body.style.cursor = 'row-resize';
+            e.preventDefault();
+        };
+
+        const doResize = (e) => {
+            if (!isResizing) return;
+
+            const currentY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+            const deltaY = currentY - startY;
+            const calculatorHeight = calculator.offsetHeight;
+
+            // Convert pixel change to percentage
+            const deltaPercent = (deltaY / calculatorHeight) * 100;
+            let newHeight = startHeight + deltaPercent;
+
+            // Constrain between 20% and 70%
+            newHeight = Math.max(20, Math.min(70, newHeight));
+
+            calculator.style.setProperty('--display-height', `${newHeight}%`);
+            e.preventDefault();
+        };
+
+        const stopResize = () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+
+                // Save the new height to localStorage
+                const currentHeight = getComputedStyle(calculator).getPropertyValue('--display-height');
+                try {
+                    localStorage.setItem('calculatorDisplayHeight', currentHeight);
+                } catch (error) {
+                    console.warn('Could not save display height:', error);
+                }
+            }
+        };
+
+        // Mouse events
+        resizeHandle.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+
+        // Touch events for mobile
+        resizeHandle.addEventListener('touchstart', startResize, { passive: false });
+        document.addEventListener('touchmove', doResize, { passive: false });
+        document.addEventListener('touchend', stopResize);
+
+        // Load saved height on initialization
+        try {
+            const savedHeight = localStorage.getItem('calculatorDisplayHeight');
+            if (savedHeight) {
+                calculator.style.setProperty('--display-height', savedHeight);
+            }
+        } catch (error) {
+            console.warn('Could not load display height:', error);
+        }
+    }
+
     handleNumber(number) {
         console.log(`Number pressed: ${number}`);
 
@@ -57,6 +133,7 @@ class Calculator {
         }
 
         this.updateDisplay();
+        this.updateClearButton();
         this.saveState(); // Save state after number input
     }
 
@@ -65,7 +142,7 @@ class Calculator {
 
         switch (action) {
             case 'clear':
-                this.clear();
+                this.handleClearButton();
                 break;
             case 'sign':
                 this.toggleSign();
@@ -127,8 +204,25 @@ class Calculator {
         }
     }
 
-    clear() {
-        console.log('Clear pressed');
+    handleClearButton() {
+        const clearButton = document.querySelector('[data-action="clear"]');
+        const isAllClear = clearButton.textContent === 'AC';
+
+        if (isAllClear) {
+            this.allClear();
+        } else {
+            // If it's showing "C", clear current entry first
+            // If current entry is already 0, then do full clear
+            if (this.currentValue === '0') {
+                this.allClear();
+            } else {
+                this.clearCurrentEntry();
+            }
+        }
+    }
+
+    allClear() {
+        console.log('All Clear pressed');
         this.currentValue = '0';
         this.previousValue = null;
         this.operator = null;
@@ -139,7 +233,18 @@ class Calculator {
         this.updateDisplay();
         this.updateRunningDisplay();
         this.clearOperatorHighlight();
+        this.updateClearButton();
         this.saveState(); // Save state after clearing
+
+        // Note: We don't reset the display height on clear - it should persist
+    }
+
+    clearCurrentEntry() {
+        console.log('Clear current entry');
+        this.currentValue = '0';
+        this.updateDisplay();
+        this.updateClearButton();
+        this.saveState();
     }
 
     saveState() {
@@ -257,6 +362,7 @@ class Calculator {
             this.currentValue += '.';
         }
         this.updateDisplay();
+        this.updateClearButton();
         this.saveState(); // Save state after decimal
     }
 
@@ -273,6 +379,7 @@ class Calculator {
             this.previousValue = newValue;
             this.waitingForOperand = true;
             this.updateDisplay();
+            this.updateClearButton();
             this.saveState(); // Save state after repeated addition
             return;
         }
@@ -299,6 +406,7 @@ class Calculator {
         this.waitingForOperand = true;
         this.operator = nextOperator;
         this.updateDisplay();
+        this.updateClearButton();
         this.highlightOperator(nextOperator);
         this.saveState(); // Save state after setting operator
     }
@@ -315,6 +423,7 @@ class Calculator {
             this.operator = null;
             this.waitingForOperand = true;
             this.updateDisplay();
+            this.updateClearButton();
             this.clearOperatorHighlight();
             this.saveState(); // Save state after calculation
         }
@@ -370,6 +479,7 @@ class Calculator {
             this.currentValue = '0';
         }
         this.updateDisplay();
+        this.updateClearButton();
         this.saveState(); // Save state after backspace
     }
 
@@ -459,6 +569,22 @@ class Calculator {
         document.querySelectorAll('.key.operator').forEach(button => {
             button.classList.remove('active');
         });
+    }
+
+    updateClearButton() {
+        const clearButton = document.querySelector('[data-action="clear"]');
+
+        // Show "AC" if we're in completely initial state
+        // Show "C" if user has entered something or there's an operation in progress
+        const shouldShowAC = (
+            this.currentValue === '0' &&
+            this.previousValue === null &&
+            this.operator === null &&
+            this.addedNumbers.length === 0 &&
+            this.waitingForOperand === false
+        );
+
+        clearButton.textContent = shouldShowAC ? 'AC' : 'C';
     }
 
     updateRunningDisplay() {
