@@ -15,10 +15,12 @@ class Calculator {
 
         this.initializeEventListeners();
         this.initializeResizeHandle();
+        this.initializeDollarToggle();
         this.loadState(); // Load saved state from localStorage
         this.updateDisplay();
         this.updateRunningDisplay();
         this.updateClearButton();
+        this.updateButtonStates();
     }
 
     initializeEventListeners() {
@@ -116,14 +118,16 @@ class Calculator {
         }
     }
 
+    initializeDollarToggle() {
+        const dollarToggle = document.getElementById('dollarToggle');
+
+        dollarToggle.addEventListener('click', () => {
+            this.toggleDollarMode();
+        });
+    }
+
     handleNumber(number) {
         console.log(`Number pressed: ${number}`);
-
-        // Handle dollar mode toggle
-        if (number === 'dollar') {
-            this.toggleDollarMode();
-            return;
-        }
 
         if (this.waitingForOperand) {
             this.currentValue = number;
@@ -281,14 +285,16 @@ class Calculator {
                 this.lastAddedValue = state.lastAddedValue || null;
                 this.dollarMode = state.dollarMode || false;
 
-                // Update dollar button appearance if in dollar mode
+                // Update dollar toggle appearance if in dollar mode
                 if (this.dollarMode) {
-                    const dollarButton = document.querySelector('[data-number="dollar"]');
-                    if (dollarButton) {
-                        dollarButton.classList.add('active');
-                        dollarButton.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+                    const dollarToggle = document.getElementById('dollarToggle');
+                    if (dollarToggle) {
+                        dollarToggle.classList.add('active');
                     }
                 }
+
+                // Update button states based on loaded mode
+                this.updateButtonStates();
 
                 // Restore operator highlight if there's an active operator
                 if (this.operator) {
@@ -306,32 +312,55 @@ class Calculator {
         console.log('Dollar mode toggled');
         this.dollarMode = !this.dollarMode;
 
-        // Update the dollar button appearance
-        const dollarButton = document.querySelector('[data-number="dollar"]');
-        if (dollarButton) {
+        // Update the dollar toggle appearance
+        const dollarToggle = document.getElementById('dollarToggle');
+        if (dollarToggle) {
             if (this.dollarMode) {
-                dollarButton.classList.add('active');
-                dollarButton.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+                dollarToggle.classList.add('active');
             } else {
-                dollarButton.classList.remove('active');
-                dollarButton.style.background = '';
+                dollarToggle.classList.remove('active');
             }
         }
 
+        // Update button states based on mode
+        this.updateButtonStates();
         this.updateDisplay();
         this.saveState(); // Save state after dollar mode toggle
     }
 
     parseDollarValue(value) {
-        // Convert input like "5200" to 52.00 (divide by 100)
         const numValue = parseFloat(value) || 0;
+
+        // If the input contains a decimal point, treat it as already in dollar format
+        // e.g., "5.25" should be $5.25, not $0.0525
+        if (value.toString().includes('.')) {
+            return numValue;
+        }
+
+        // For whole numbers, convert cents to dollars (e.g., "525" becomes $5.25)
         return numValue / 100;
+    }
+
+    formatNumberWithCommas(value) {
+        // Format number with commas for thousands separators
+        const num = parseFloat(value);
+        if (isNaN(num)) return value;
+
+        // Preserve the original string format to maintain trailing zeros
+        const originalStr = value.toString();
+        const parts = originalStr.split('.');
+
+        // Add commas to the integer part
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+        return parts.join('.');
     }
 
     formatDollarDisplay(value) {
         // Format number as currency for display
         const numValue = parseFloat(value) || 0;
-        return '$' + numValue.toFixed(2);
+        const formatted = this.formatNumberWithCommas(numValue.toFixed(2));
+        return '$' + formatted;
     }
 
     toggleSign() {
@@ -355,6 +384,7 @@ class Calculator {
 
     decimal() {
         console.log('Decimal pressed');
+
         if (this.waitingForOperand) {
             this.currentValue = '0.';
             this.waitingForOperand = false;
@@ -505,6 +535,23 @@ class Calculator {
                     displayValue = num.toPrecision(12).replace(/\.?0+$/, '');
                 }
             }
+
+            // Add comma formatting for regular numbers (not during input with decimal)
+            if (!displayValue.includes('.') || displayValue.endsWith('.')) {
+                const num = parseFloat(displayValue);
+                if (!isNaN(num) && Math.abs(num) >= 1000) {
+                    const baseNumber = displayValue.endsWith('.') ?
+                        displayValue.slice(0, -1) : displayValue;
+                    const formatted = this.formatNumberWithCommas(baseNumber);
+                    displayValue = displayValue.endsWith('.') ? formatted + '.' : formatted;
+                }
+            } else {
+                // For numbers with decimals, format if the whole part is >= 1000
+                const num = parseFloat(displayValue);
+                if (!isNaN(num) && Math.abs(num) >= 1000) {
+                    displayValue = this.formatNumberWithCommas(displayValue);
+                }
+            }
         }
 
         this.primaryDisplay.textContent = displayValue;
@@ -522,10 +569,10 @@ class Calculator {
             };
             let prevDisplay = this.dollarMode ?
                 this.formatDollarDisplay(this.previousValue) :
-                this.previousValue.toString();
+                this.formatNumberWithCommas(this.previousValue.toString());
 
             if (!this.dollarMode && prevDisplay.length > 10) {
-                prevDisplay = parseFloat(prevDisplay).toPrecision(6);
+                prevDisplay = parseFloat(this.previousValue).toPrecision(6);
             }
             this.secondaryDisplay.textContent = `${prevDisplay} ${operatorSymbols[this.operator]}`;
         } else {
@@ -536,19 +583,33 @@ class Calculator {
     adjustFontSize() {
         const text = this.primaryDisplay.textContent;
         const length = text.length;
+        const containerWidth = this.primaryDisplay.offsetWidth;
 
-        // Calculate font size based on text length
+        // Calculate font size based on text length and container width
         let fontSize;
+
+        // Base font sizes for different screen sizes
+        const isMobile = window.innerWidth <= 480;
+        const isSmallMobile = window.innerWidth <= 320;
+
         if (length <= 8) {
-            fontSize = '48px';
+            fontSize = isMobile ? '36px' : '48px';
         } else if (length <= 10) {
-            fontSize = '40px';
+            fontSize = isMobile ? '32px' : '40px';
         } else if (length <= 12) {
-            fontSize = '32px';
+            fontSize = isMobile ? '28px' : '32px';
         } else if (length <= 15) {
-            fontSize = '28px';
+            fontSize = isMobile ? '24px' : '28px';
+        } else if (length <= 18) {
+            fontSize = isSmallMobile ? '18px' : isMobile ? '20px' : '24px';
+        } else if (length <= 22) {
+            fontSize = isSmallMobile ? '16px' : isMobile ? '18px' : '20px';
         } else {
-            fontSize = '24px';
+            // For very long numbers, calculate based on container width
+            const maxWidth = containerWidth * 0.95; // Use 95% of container width
+            const estimatedCharWidth = isSmallMobile ? 8 : isMobile ? 10 : 12;
+            const calculatedSize = Math.floor(maxWidth / length * estimatedCharWidth);
+            fontSize = Math.max(calculatedSize, isSmallMobile ? 12 : 14) + 'px';
         }
 
         this.primaryDisplay.style.fontSize = fontSize;
@@ -587,6 +648,25 @@ class Calculator {
         clearButton.textContent = shouldShowAC ? 'AC' : 'C';
     }
 
+    updateButtonStates() {
+        const doubleZeroButton = document.querySelector('[data-number="00"]');
+        const decimalButton = document.querySelector('[data-action="decimal"]');
+
+        if (doubleZeroButton && decimalButton) {
+            if (this.dollarMode) {
+                // In dollar mode: emphasize 00, but keep decimal available
+                doubleZeroButton.style.opacity = '1';
+                decimalButton.style.opacity = '0.8'; // Slightly dimmed but still usable
+                decimalButton.style.pointerEvents = 'auto'; // Enable clicking
+            } else {
+                // In normal mode: emphasize decimal, de-emphasize 00
+                doubleZeroButton.style.opacity = '0.5';
+                decimalButton.style.opacity = '1';
+                decimalButton.style.pointerEvents = 'auto'; // Enable clicking
+            }
+        }
+    }
+
     updateRunningDisplay() {
         // Clear the running display
         this.runningElement.innerHTML = '';
@@ -600,7 +680,9 @@ class Calculator {
             numberSpan.className = 'running-number';
 
             // Format number display based on dollar mode
-            const displayNumber = this.dollarMode ? this.formatDollarDisplay(number) : number;
+            const displayNumber = this.dollarMode ?
+                this.formatDollarDisplay(number) :
+                this.formatNumberWithCommas(number.toString());
             numberSpan.textContent = `+${displayNumber}`;
 
             const totalSpan = document.createElement('span');
@@ -608,7 +690,9 @@ class Calculator {
 
             // Calculate running total up to this point
             const runningSum = this.addedNumbers.slice(0, index + 1).reduce((sum, num) => sum + num, 0);
-            const displayTotal = this.dollarMode ? this.formatDollarDisplay(runningSum) : runningSum;
+            const displayTotal = this.dollarMode ?
+                this.formatDollarDisplay(runningSum) :
+                this.formatNumberWithCommas(runningSum.toString());
             totalSpan.textContent = `= ${displayTotal}`;
 
             item.appendChild(numberSpan);

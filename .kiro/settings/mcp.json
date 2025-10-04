@@ -11,7 +11,10 @@
       "disabled": false,
       "autoApprove": [
         "browser_click",
-        "browser_resize"
+        "browser_resize",
+        "browser_navigate",
+        "browser_close",
+        "browser_take_screenshot"
       ]
     }
   }

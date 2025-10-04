@@ -21,7 +21,10 @@
             <div class="running">
             </div>
             <div class="display-container">
-                <div class="display-secondary" id="secondaryDisplay"></div>
+                <div class="display-header">
+                    <div class="display-secondary" id="secondaryDisplay"></div>
+                    <button class="dollar-toggle" id="dollarToggle" title="Toggle dollar mode">$</button>
+                </div>
                 <div class="display-primary" id="primaryDisplay">0</div>
             </div>
         </div>
@@ -51,7 +54,7 @@
             <!-- Bottom row -->
             <button class="key number" data-number="0">0</button>
             <button class="key number" data-number="00">00</button>
-            <button class="key number" data-number="dollar">$</button>
+            <button class="key function" data-action="decimal">.</button>
         </div>
     </div>
 
