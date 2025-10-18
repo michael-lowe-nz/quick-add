@@ -131,6 +131,15 @@ body {
     /* Limit width to prevent overflow */
 }
 
+/* Color coding for different operation types */
+.running-number.operation-add {
+    color: rgba(76, 175, 80, 0.9); /* Green for addition operations */
+}
+
+.running-number.operation-subtract {
+    color: rgba(231, 76, 60, 0.9); /* Red for subtraction operations */
+}
+
 .running-total {
     color: rgba(76, 175, 80, 0.8);
     font-size: 9px;
@@ -141,6 +150,91 @@ body {
     max-width: 35%;
     /* Limit width to prevent overflow */
     text-align: right;
+}
+
+/* Color coding for running totals based on positive/negative values */
+.running-total.total-positive {
+    color: rgba(76, 175, 80, 0.8); /* Green for positive totals */
+}
+
+.running-total.total-negative {
+    color: rgba(231, 76, 60, 0.8); /* Red for negative totals */
+}
+
+/* Editable running items styles */
+.running-item {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.running-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.running-item-edit {
+    background: rgba(255, 255, 255, 0.1) !important;
+    cursor: default;
+}
+
+.edit-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    color: white;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 11px;
+    padding: 2px 6px;
+    width: 60%;
+    outline: none;
+}
+
+.edit-input:focus {
+    border-color: rgba(76, 175, 80, 0.8);
+    box-shadow: 0 0 0 1px rgba(76, 175, 80, 0.3);
+}
+
+.edit-input.error {
+    border-color: rgba(231, 76, 60, 0.8);
+    box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.3);
+}
+
+.edit-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.edit-save,
+.edit-cancel,
+.edit-delete {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    color: white;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 2px 4px;
+    transition: all 0.2s ease;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-save:hover {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.edit-cancel:hover {
+    background: rgba(158, 158, 158, 0.3);
+    border-color: rgba(158, 158, 158, 0.5);
+}
+
+.edit-delete:hover {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: rgba(231, 76, 60, 0.5);
 }
 
 /* Main Display (Right Side) */
@@ -251,11 +345,11 @@ body {
     overflow: hidden;
     flex: 1;
     grid-template-areas:
-        "clear clear clear add"
-        "seven eight nine add"
-        "four five six add"
-        "one two three add"
-        "zero doublezero decimal add";
+        "clear clear clear add-subtract"
+        "seven eight nine add-subtract"
+        "four five six add-subtract"
+        "one two three add-subtract"
+        "zero doublezero decimal add-subtract";
 }
 
 /* ===========================================
@@ -336,6 +430,10 @@ body {
     background: linear-gradient(135deg, #5CBF60 0%, #55b059 100%);
 }
 
+.key.equuals::after {
+     content: " ="
+}
+
 /* ===========================================
    GRID AREA ASSIGNMENTS
    =========================================== */
@@ -399,8 +497,115 @@ body {
     grid-area: three;
 }
 
-.key[data-action="add"] {
-    grid-area: add;
+/* Split Add/Subtract Button Container */
+.key[data-action="add-subtract-container"] {
+    grid-area: add-subtract;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 2px;
+    background: none;
+    border: none;
+}
+
+.key[data-action="add-subtract-container"]:hover {
+    background: none;
+}
+
+.key[data-action="add-subtract-container"]:active {
+    transform: none;
+}
+
+/* Subtract Button (Top 40%) */
+.subtract-button {
+    flex: 0.4;
+    width: 100%;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    font-size: 28px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+    border-radius: 0;
+    min-height: 44px; /* Minimum touch target size for accessibility */
+}
+
+.subtract-button:hover {
+    background: linear-gradient(135deg, #e85a4f 0%, #c44536 100%);
+}
+
+.subtract-button:active {
+    transform: scale(0.95);
+    background: linear-gradient(135deg, #d73527 0%, #b73225 100%);
+}
+
+/* Add Button (Bottom 60%) */
+.add-button {
+    flex: 0.6;
+    width: 100%;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border: none;
+    font-size: 28px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    -ms-touch-action: manipulation;
+    border-radius: 0;
+    min-height: 44px; /* Minimum touch target size for accessibility */
+}
+
+.add-button:hover {
+    background: linear-gradient(135deg, #ff7b45 0%, #f8a32e 100%);
+}
+
+.add-button:active {
+    transform: scale(0.95);
+    background: linear-gradient(135deg, #ff8b55 0%, #f9b33e 100%);
+}
+
+/* Add the character "=" after the content of the equals button on a new line */
+
+
+.add-button::after {
+     content: "="
+}
+
+
+/* Active states for operation feedback */
+.subtract-button.active {
+    background: linear-gradient(135deg, #e85a4f 0%, #c44536 100%);
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+}
+
+.add-button.active {
+    background: linear-gradient(135deg, #ff8b55 0%, #f9b33e 100%);
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+}
+
+/* Focus states for keyboard accessibility */
+.subtract-button:focus {
+    outline: 2px solid rgba(231, 76, 60, 0.6);
+    outline-offset: 2px;
+}
+
+.add-button:focus {
+    outline: 2px solid rgba(255, 107, 53, 0.6);
+    outline-offset: 2px;
 }
 
 .key[data-number="0"] {
@@ -413,6 +618,34 @@ body {
 
 .key[data-action="decimal"] {
     grid-area: decimal;
+}
+
+/* ===========================================
+   MOBILE RESPONSIVENESS FOR SPLIT BUTTONS
+   =========================================== */
+@media (max-width: 480px) {
+    .subtract-button,
+    .add-button {
+        font-size: 24px;
+        min-height: 48px; /* Larger touch targets on mobile */
+    }
+}
+
+@media (max-height: 600px) {
+    .subtract-button,
+    .add-button {
+        font-size: 22px;
+        min-height: 40px; /* Adjust for smaller screens */
+    }
+}
+
+/* Ensure buttons maintain proper proportions on very small screens */
+@media (max-width: 320px) {
+    .subtract-button,
+    .add-button {
+        font-size: 20px;
+        min-height: 44px;
+    }
 }
 
 /* ===========================================

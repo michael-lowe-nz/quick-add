@@ -1,3 +1,14 @@
+/**
+ * Operation interface structure:
+ * {
+ *   id: string,           // Unique identifier (timestamp-based)
+ *   value: number,        // The numeric value
+ *   operation: 'add' | 'subtract',  // Operation type
+ *   timestamp: number,    // Creation timestamp for ordering
+ *   runningTotal: number  // Running total after this operation
+ * }
+ */
+
 class Calculator {
     constructor() {
         this.primaryDisplay = document.getElementById('primaryDisplay');
@@ -9,7 +20,7 @@ class Calculator {
         this.operator = null;
         this.waitingForOperand = false;
         this.runningTotal = 0;
-        this.addedNumbers = [];
+        this.operationHistory = []; // Replaces addedNumbers array
         this.lastAddedValue = null; // Track the last added value for repeat addition
         this.dollarMode = false; // Track if we're in dollar mode
 
@@ -23,6 +34,44 @@ class Calculator {
         this.updateButtonStates();
     }
 
+    /**
+     * Generate a unique ID for operations
+     * @returns {string} Unique identifier
+     */
+    generateOperationId() {
+        return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    /**
+     * Create a new operation object
+     * @param {number} value - The numeric value
+     * @param {string} operation - The operation type ('add' or 'subtract')
+     * @param {number} runningTotal - The running total after this operation
+     * @returns {Object} Operation object
+     */
+    createOperation(value, operation, runningTotal) {
+        return {
+            id: this.generateOperationId(),
+            value: value,
+            operation: operation,
+            timestamp: Date.now(),
+            runningTotal: runningTotal
+        };
+    }
+
+    /**
+     * Perform subtraction operation and update operation history
+     * @param {number} value - The value to subtract
+     */
+    performSubtraction(value) {
+        this.runningTotal -= value;
+        const operation = this.createOperation(value, 'subtract', this.runningTotal);
+        this.operationHistory.push(operation);
+        this.updateRunningDisplay();
+    }
+
+
+
     initializeEventListeners() {
         // Number buttons
         document.querySelectorAll('.key[data-number]').forEach(button => {
@@ -31,8 +80,15 @@ class Calculator {
             });
         });
 
-        // Operator buttons
-        document.querySelectorAll('.key[data-action]').forEach(button => {
+        // Operator buttons (excluding the container)
+        document.querySelectorAll('.key[data-action]:not([data-action="add-subtract-container"])').forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.handleAction(e.target.dataset.action);
+            });
+        });
+
+        // Add and subtract buttons (inside the container)
+        document.querySelectorAll('.add-button, .subtract-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 this.handleAction(e.target.dataset.action);
             });
@@ -232,7 +288,7 @@ class Calculator {
         this.operator = null;
         this.waitingForOperand = false;
         this.runningTotal = 0;
-        this.addedNumbers = [];
+        this.operationHistory = [];
         this.lastAddedValue = null;
         this.updateDisplay();
         this.updateRunningDisplay();
@@ -258,7 +314,7 @@ class Calculator {
             operator: this.operator,
             waitingForOperand: this.waitingForOperand,
             runningTotal: this.runningTotal,
-            addedNumbers: this.addedNumbers,
+            operationHistory: this.operationHistory,
             lastAddedValue: this.lastAddedValue,
             dollarMode: this.dollarMode
         };
@@ -281,9 +337,24 @@ class Calculator {
                 this.operator = state.operator || null;
                 this.waitingForOperand = state.waitingForOperand || false;
                 this.runningTotal = state.runningTotal || 0;
-                this.addedNumbers = state.addedNumbers || [];
                 this.lastAddedValue = state.lastAddedValue || null;
                 this.dollarMode = state.dollarMode || false;
+
+                // Handle data format compatibility
+                if (state.operationHistory) {
+                    // New format - use operationHistory directly
+                    this.operationHistory = state.operationHistory;
+                } else if (state.addedNumbers) {
+                    // Old format detected - start fresh with new format
+                    console.log('Old data format detected, starting fresh with new operation history format');
+                    this.operationHistory = [];
+                    this.runningTotal = 0;
+                    // Clear the old format and save new state
+                    this.saveState();
+                } else {
+                    // No operation history
+                    this.operationHistory = [];
+                }
 
                 // Update dollar toggle appearance if in dollar mode
                 if (this.dollarMode) {
@@ -418,11 +489,14 @@ class Calculator {
 
         if (this.previousValue === null) {
             this.previousValue = inputValue;
-            // If this is the first addition operation, track the first number
-            if (nextOperator === 'add' && this.addedNumbers.length === 0) {
-                this.addedNumbers.push(inputValue);
+            // If this is the first operation, initialize running total and track the first number
+            if ((nextOperator === 'add' || nextOperator === 'subtract') && this.operationHistory.length === 0) {
                 this.runningTotal = inputValue;
-                this.lastAddedValue = inputValue;
+                const operation = this.createOperation(inputValue, nextOperator === 'add' ? 'add' : 'subtract', this.runningTotal);
+                this.operationHistory.push(operation);
+                if (nextOperator === 'add') {
+                    this.lastAddedValue = inputValue;
+                }
                 this.updateRunningDisplay();
             }
         } else if (this.operator) {
@@ -472,14 +546,20 @@ class Calculator {
         switch (this.operator) {
             case 'add':
                 result = prev + current;
-                // Track the number being added
-                this.addedNumbers.push(current);
+                // Track the addition operation
                 this.runningTotal += current;
+                const addOperation = this.createOperation(current, 'add', this.runningTotal);
+                this.operationHistory.push(addOperation);
                 this.lastAddedValue = current; // Store for repeat addition
                 this.updateRunningDisplay();
                 break;
             case 'subtract':
                 result = prev - current;
+                // Track the subtraction operation
+                this.runningTotal -= current;
+                const subtractOperation = this.createOperation(current, 'subtract', this.runningTotal);
+                this.operationHistory.push(subtractOperation);
+                this.updateRunningDisplay();
                 break;
             case 'multiply':
                 result = prev * current;
@@ -619,15 +699,34 @@ class Calculator {
         // Clear previous highlights
         this.clearOperatorHighlight();
 
-        // Highlight current operator
-        const operatorButton = document.querySelector(`[data-action="${operator}"]`);
-        if (operatorButton) {
-            operatorButton.classList.add('active');
+        // Highlight current operator - handle both old and new button structures
+        if (operator === 'add') {
+            const addButton = document.querySelector('.add-button');
+            if (addButton) {
+                addButton.classList.add('active');
+            }
+        } else if (operator === 'subtract') {
+            const subtractButton = document.querySelector('.subtract-button');
+            if (subtractButton) {
+                subtractButton.classList.add('active');
+            }
+        } else {
+            // For other operators, use the standard approach
+            const operatorButton = document.querySelector(`[data-action="${operator}"]`);
+            if (operatorButton) {
+                operatorButton.classList.add('active');
+            }
         }
     }
 
     clearOperatorHighlight() {
+        // Clear highlights from standard operator buttons
         document.querySelectorAll('.key.operator').forEach(button => {
+            button.classList.remove('active');
+        });
+        
+        // Clear highlights from add/subtract buttons
+        document.querySelectorAll('.add-button, .subtract-button').forEach(button => {
             button.classList.remove('active');
         });
     }
@@ -641,7 +740,7 @@ class Calculator {
             this.currentValue === '0' &&
             this.previousValue === null &&
             this.operator === null &&
-            this.addedNumbers.length === 0 &&
+            this.operationHistory.length === 0 &&
             this.waitingForOperand === false
         );
 
@@ -671,37 +770,333 @@ class Calculator {
         // Clear the running display
         this.runningElement.innerHTML = '';
 
-        // Add each number that was added
-        this.addedNumbers.forEach((number, index) => {
+        // Add each operation from the operation history in chronological order
+        this.operationHistory.forEach((operation, index) => {
             const item = document.createElement('div');
             item.className = 'running-item';
+            item.dataset.operationId = operation.id;
 
             const numberSpan = document.createElement('span');
             numberSpan.className = 'running-number';
 
             // Format number display based on dollar mode
             const displayNumber = this.dollarMode ?
-                this.formatDollarDisplay(number) :
-                this.formatNumberWithCommas(number.toString());
-            numberSpan.textContent = `+${displayNumber}`;
+                this.formatDollarDisplay(operation.value) :
+                this.formatNumberWithCommas(operation.value.toString());
+            
+            // Add operation prefix with visual indicators for addition (+) and subtraction (−)
+            const operationPrefix = operation.operation === 'add' ? '+' : '−';
+            numberSpan.textContent = `${operationPrefix}${displayNumber}`;
+            
+            // Add color coding for different operation types
+            if (operation.operation === 'add') {
+                numberSpan.classList.add('operation-add');
+            } else if (operation.operation === 'subtract') {
+                numberSpan.classList.add('operation-subtract');
+            }
 
             const totalSpan = document.createElement('span');
             totalSpan.className = 'running-total';
 
-            // Calculate running total up to this point
-            const runningSum = this.addedNumbers.slice(0, index + 1).reduce((sum, num) => sum + num, 0);
+            // Use the stored running total from the operation for each entry
             const displayTotal = this.dollarMode ?
-                this.formatDollarDisplay(runningSum) :
-                this.formatNumberWithCommas(runningSum.toString());
+                this.formatDollarDisplay(operation.runningTotal) :
+                this.formatNumberWithCommas(operation.runningTotal.toString());
             totalSpan.textContent = `= ${displayTotal}`;
+
+            // Add color coding for running total based on positive/negative value
+            if (operation.runningTotal < 0) {
+                totalSpan.classList.add('total-negative');
+            } else {
+                totalSpan.classList.add('total-positive');
+            }
 
             item.appendChild(numberSpan);
             item.appendChild(totalSpan);
+            
+            // Add click event listener for edit mode activation
+            item.addEventListener('click', (e) => {
+                this.activateEditMode(operation.id, item);
+            });
+
             this.runningElement.appendChild(item);
         });
 
-        // Auto-scroll to bottom to show latest additions
+        // Auto-scroll to bottom to show latest additions and maintain chronological order
         this.runningElement.scrollTop = this.runningElement.scrollHeight;
+    }
+
+    /**
+     * Activate edit mode for a running item
+     * @param {string} operationId - The ID of the operation to edit
+     * @param {HTMLElement} itemElement - The running item element
+     */
+    activateEditMode(operationId, itemElement) {
+        // Prevent multiple edit modes
+        if (document.querySelector('.running-item-edit')) {
+            return;
+        }
+
+        const operation = this.operationHistory.find(op => op.id === operationId);
+        if (!operation) return;
+
+        // Store original content for cancel functionality
+        const originalContent = itemElement.innerHTML;
+        
+        // Clear the item and create edit interface
+        itemElement.innerHTML = '';
+        itemElement.classList.add('running-item-edit');
+
+        // Create input field
+        const inputField = document.createElement('input');
+        inputField.type = 'tel';
+        inputField.className = 'edit-input';
+        inputField.value = operation.value;
+        inputField.step = 'any';
+
+        // Create action buttons container
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'edit-actions';
+
+        // Create save button
+        const saveButton = document.createElement('button');
+        saveButton.className = 'edit-save';
+        saveButton.textContent = '✓';
+        saveButton.title = 'Save changes';
+
+        // Create cancel button
+        const cancelButton = document.createElement('button');
+        cancelButton.className = 'edit-cancel';
+        cancelButton.textContent = '✕';
+        cancelButton.title = 'Cancel edit';
+
+        // Create delete button
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'edit-delete';
+        deleteButton.textContent = '🗑';
+        deleteButton.title = 'Delete operation';
+
+        actionsContainer.appendChild(saveButton);
+        actionsContainer.appendChild(cancelButton);
+        actionsContainer.appendChild(deleteButton);
+
+        itemElement.appendChild(inputField);
+        itemElement.appendChild(actionsContainer);
+
+        // Focus the input field and select all text
+        inputField.focus();
+        inputField.select();
+
+        // Save functionality
+        const saveEdit = () => {
+            const newValue = parseFloat(inputField.value);
+            if (isNaN(newValue)) {
+                // Invalid input - show error and return
+                inputField.classList.add('error');
+                return;
+            }
+            this.saveOperationEdit(operationId, newValue);
+        };
+
+        // Cancel functionality
+        const cancelEdit = () => {
+            itemElement.innerHTML = originalContent;
+            itemElement.classList.remove('running-item-edit');
+            // Re-add click listener
+            itemElement.addEventListener('click', (e) => {
+                this.activateEditMode(operationId, itemElement);
+            });
+        };
+
+        // Delete functionality
+        const deleteOperation = () => {
+            this.deleteOperation(operationId);
+        };
+
+        // Event listeners for buttons
+        saveButton.addEventListener('click', saveEdit);
+        cancelButton.addEventListener('click', cancelEdit);
+        deleteButton.addEventListener('click', deleteOperation);
+
+        // Keyboard event handlers
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveEdit();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelEdit();
+            }
+        });
+
+        // Remove error class on input
+        inputField.addEventListener('input', () => {
+            inputField.classList.remove('error');
+        });
+    }
+
+    /**
+     * Save an edited operation value
+     * @param {string} operationId - The ID of the operation to edit
+     * @param {number} newValue - The new value for the operation
+     */
+    saveOperationEdit(operationId, newValue) {
+        const operationIndex = this.operationHistory.findIndex(op => op.id === operationId);
+        if (operationIndex === -1) {
+            console.warn(`Operation with ID ${operationId} not found`);
+            return;
+        }
+
+        // Validate the new value
+        if (typeof newValue !== 'number' || isNaN(newValue)) {
+            console.warn(`Invalid new value for operation edit: ${newValue}`);
+            return;
+        }
+
+        // Store the old value for potential rollback
+        const oldValue = this.operationHistory[operationIndex].value;
+
+        try {
+            // Update the operation value
+            this.operationHistory[operationIndex].value = newValue;
+
+            // Recalculate all running totals from this point forward
+            this.recalculateAllRunningTotals();
+
+            // Update displays
+            this.updateRunningDisplay();
+            
+            // Save state
+            this.saveState();
+        } catch (error) {
+            console.error('Error during operation edit:', error);
+            // Rollback on error
+            this.operationHistory[operationIndex].value = oldValue;
+            this.recalculateAllRunningTotals();
+            this.updateRunningDisplay();
+        }
+    }
+
+    /**
+     * Delete an operation from the history
+     * @param {string} operationId - The ID of the operation to delete
+     */
+    deleteOperation(operationId) {
+        const operationIndex = this.operationHistory.findIndex(op => op.id === operationId);
+        if (operationIndex === -1) {
+            console.warn(`Operation with ID ${operationId} not found for deletion`);
+            return;
+        }
+
+        // Store the operation for potential rollback
+        const deletedOperation = { ...this.operationHistory[operationIndex] };
+
+        try {
+            // Remove the operation from history
+            this.operationHistory.splice(operationIndex, 1);
+
+            // Recalculate all running totals
+            this.recalculateAllRunningTotals();
+
+            // Update displays
+            this.updateRunningDisplay();
+            
+            // Save state
+            this.saveState();
+        } catch (error) {
+            console.error('Error during operation deletion:', error);
+            // Rollback on error
+            this.operationHistory.splice(operationIndex, 0, deletedOperation);
+            this.recalculateAllRunningTotals();
+            this.updateRunningDisplay();
+        }
+    }
+
+    /**
+     * Recalculate all running totals after an edit or deletion
+     * Handles edge cases like empty operation history and ensures proper state management
+     */
+    recalculateAllRunningTotals() {
+        // Handle edge case: empty operation history
+        if (!this.operationHistory || this.operationHistory.length === 0) {
+            this.runningTotal = 0;
+            return;
+        }
+
+        let runningTotal = 0;
+
+        // Recalculate running totals for all operations in chronological order
+        this.operationHistory.forEach((operation, index) => {
+            // Validate operation data before processing
+            if (!operation || typeof operation.value !== 'number' || isNaN(operation.value)) {
+                console.warn(`Invalid operation at index ${index}:`, operation);
+                return;
+            }
+
+            // Perform the operation calculation
+            if (operation.operation === 'add') {
+                runningTotal += operation.value;
+            } else if (operation.operation === 'subtract') {
+                runningTotal -= operation.value;
+            } else {
+                console.warn(`Unknown operation type: ${operation.operation}`);
+                return;
+            }
+
+            // Update the operation's running total
+            operation.runningTotal = runningTotal;
+        });
+
+        // Update the calculator's running total with proper rounding to avoid floating point issues
+        this.runningTotal = Math.round((runningTotal + Number.EPSILON) * 100000000) / 100000000;
+
+        // Ensure state consistency after recalculation
+        this.ensureStateConsistency();
+    }
+
+    /**
+     * Ensure state consistency after recalculation
+     * Validates that the calculator state is coherent after running total changes
+     */
+    ensureStateConsistency() {
+        // If we're not in the middle of an operation and have operation history,
+        // ensure the current value reflects the running total
+        if (!this.operator && !this.waitingForOperand && this.operationHistory.length > 0) {
+            // Only update if the current value doesn't match the running total
+            const currentNumValue = parseFloat(this.currentValue);
+            if (Math.abs(currentNumValue - this.runningTotal) > 0.0000001) {
+                this.updateMainDisplayFromRunningTotal();
+            }
+        }
+
+        // Reset previous value and operator if we're showing the running total
+        if (this.currentValue === this.runningTotal.toString()) {
+            this.previousValue = null;
+            this.operator = null;
+            this.waitingForOperand = false;
+            this.clearOperatorHighlight();
+        }
+    }
+
+    /**
+     * Update the main display based on the current running total
+     * Handles edge cases and ensures proper display formatting
+     */
+    updateMainDisplayFromRunningTotal() {
+        // Handle edge case: no operation history
+        if (!this.operationHistory || this.operationHistory.length === 0) {
+            this.currentValue = '0';
+            this.runningTotal = 0;
+        } else {
+            // Update the main display to show the current running total
+            this.currentValue = this.runningTotal.toString();
+        }
+
+        // Update the display with proper formatting
+        this.updateDisplay();
+        
+        // Update the clear button state
+        this.updateClearButton();
     }
 }
 

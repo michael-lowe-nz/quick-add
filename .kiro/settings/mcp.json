@@ -14,7 +14,11 @@
         "browser_resize",
         "browser_navigate",
         "browser_close",
-        "browser_take_screenshot"
+        "browser_take_screenshot",
+        "browser_hover",
+        "browser_press_key",
+        "browser_type",
+        "browser_snapshot"
       ]
     }
   }
